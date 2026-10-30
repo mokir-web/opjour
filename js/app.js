@@ -48,7 +48,7 @@ function drawApp(root) {
 
   let adminBar = '';
   if (me.isAdmin) {
-    const opts = (me.roster || []).filter(u => u.active).map(u =>
+    const opts = (me.roster || []).filter(u => u.active && !u.isDisplay).map(u =>
       `<option value="${esc(u.id)}"${u.id === _app.acting ? ' selected' : ''}>${esc(u.displayName)}${u.id === me.userId ? ' (jag)' : ''}</option>`
     ).join('');
     adminBar = `<div class="card"><label for="acting" style="margin-top:0">Boka / anmäl åt</label>

@@ -172,6 +172,12 @@
     .tagchip { display: inline-block; font-size: 11px; font-weight: bold; padding: 1px 8px; border-radius: 9px; background: #eef1f3; color: var(--ink-soft); border: 1px solid var(--line); }
     .tagchip.admin { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
     .tagchip.off { background: #f6e3df; color: var(--danger); border-color: #e3b3ab; }
+    .imp-table { border-collapse: collapse; font-size: 14px; width: 100%; }
+    .imp-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--ink-soft); padding: 4px 8px 4px 0; }
+    .imp-table td { padding: 5px 8px 5px 0; border-top: 1px solid var(--line); vertical-align: top; }
+    .imp-table tr.error td { background: #fbecea; }
+    .imp-table tr.exists td { color: var(--ink-soft); }
+    input[type=file] { font-size: 14px; max-width: 100%; }
     .big-today .phone-big { font-size: 26px; margin-top: 6px; }
     .big-today .plist { font-size: 22px; line-height: 1.6; }
 
@@ -191,27 +197,13 @@
   <main id="login" class="hidden">
     <h1>Opjour</h1>
     <div class="card">
-      <div class="tabs">
-        <button id="tab-user" class="active" onclick="showLoginTab('user')">Personlig</button>
-        <button id="tab-display" onclick="showLoginTab('display')">Visningsskärm</button>
-      </div>
-
-      <form id="form-user" onsubmit="return doUserLogin(event)">
-        <label for="li-username">Användarnamn</label>
+      <form id="form-user" onsubmit="return doLogin(event)">
+        <label for="li-username" style="margin-top:0">Användarnamn</label>
         <input type="text" id="li-username" autocomplete="username" autocapitalize="none" spellcheck="false">
         <label for="li-pin">PIN</label>
         <input type="password" id="li-pin" inputmode="numeric" autocomplete="current-password">
         <div class="row" style="margin-top:14px;"><button type="submit" class="btn">Logga in</button></div>
         <div id="li-status" class="status err"></div>
-      </form>
-
-      <form id="form-display" class="hidden" onsubmit="return doDisplayLogin(event)">
-        <label for="ld-code">Klinikkod</label>
-        <input type="text" id="ld-code" autocapitalize="none" spellcheck="false">
-        <label for="ld-pin">Visnings-PIN</label>
-        <input type="password" id="ld-pin" inputmode="numeric">
-        <div class="row" style="margin-top:14px;"><button type="submit" class="btn">Öppna visningsvy</button></div>
-        <div id="ld-status" class="status err"></div>
       </form>
     </div>
     <p class="muted" style="font-size:12px;text-align:center" id="ver-login"></p>
@@ -256,7 +248,7 @@
       ? 'http://localhost:8080'
       : 'https://opjour-backend-110110585004.europe-north1.run.app'; // byts när domänen är vald (opjour_migrationsplan.md §12)
 
-    const APP_VERSION = '0.2.1';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
+    const APP_VERSION = '0.3.0';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
 
     const SV_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
     const SV_DAYS_FULL = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
@@ -283,10 +275,11 @@
       });
       const fresh = res.headers.get('X-Refreshed-Token');
       if (fresh) { state.token = fresh; localStorage.setItem('opjour_token', fresh); }
-      const isLogin = path === '/auth/login' || path === '/auth/display-login';
+      const isLogin = path === '/auth/login';
       if (res.status === 401 && !isLogin) { logout(); throw new Error('Sessionen har gått ut.'); }
       const text = await res.text();
       const data = text ? JSON.parse(text) : null;
+      if (res.status === 403 && data?.mustChangePin) { showOnly('changepin'); throw new Error(data.error); }
       if (!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
       return data;
     }
@@ -309,33 +302,17 @@
       for (const s of ['login', 'changepin', 'app']) el(s).classList.toggle('hidden', s !== id);
     }
 
-    function showLoginTab(which) {
-      el('tab-user').classList.toggle('active', which === 'user');
-      el('tab-display').classList.toggle('active', which === 'display');
-      el('form-user').classList.toggle('hidden', which !== 'user');
-      el('form-display').classList.toggle('hidden', which !== 'display');
-    }
-
-    async function doUserLogin(e) {
+    // En inloggning för alla roller. Kontots roll avgör vyn: personlig vy eller (visningskonto) visningsskärmen.
+    async function doLogin(e) {
       e.preventDefault();
       el('li-status').textContent = '';
       try {
         const r = await api('/auth/login', { method: 'POST', body: { username: el('li-username').value, pin: el('li-pin').value } });
-        saveSession(r.token, 'user', r.clinicName);
+        saveSession(r.token, r.scope, r.clinicName);
+        el('li-pin').value = '';
         if (r.mustChangePin) { showOnly('changepin'); return false; }
         enterApp();
       } catch (err) { el('li-status').textContent = err.message; }
-      return false;
-    }
-
-    async function doDisplayLogin(e) {
-      e.preventDefault();
-      el('ld-status').textContent = '';
-      try {
-        const r = await api('/auth/display-login', { method: 'POST', body: { code: el('ld-code').value, pin: el('ld-pin').value } });
-        saveSession(r.token, 'display', r.clinicName);
-        enterApp();
-      } catch (err) { el('ld-status').textContent = err.message; }
       return false;
     }
 
@@ -505,6 +482,7 @@
   </script>
 
   <script src="js/app.js"></script>
+  <script src="js/import.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/display.js"></script>

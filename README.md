@@ -6,6 +6,8 @@ Vanilla JS-SPA, ingen byggkedja. Tänkt för GitHub Pages + eget domännamn (TBD
 
 - `index.html` — skal: CSS-tokens, `api()`, inloggning (personlig + visningsskärm),
   tvingat PIN-byte, och den delade kalender-renderaren `buildCalendar()`.
+- `js/import.js` — CSV/Excel-tolkning för användarimport (inga beroenden; fungerar även i Node för tester).
+- `js/settings.js` / `js/admin.js` — inställningar och admin (roller, import).
 - `js/app.js` — personlig vy (`renderApp`). En sida: dagens opjour, reservtoggle,
   5-veckorskalender med boka/avboka, "mina kommande pass". Admin får en "boka åt"-väljare.
 - `js/display.js` — visningsvy (`renderDisplay`). Read-only, stor "Dagens opjour: X" /
