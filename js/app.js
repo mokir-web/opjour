@@ -96,6 +96,25 @@ function drawApp(root) {
     ${adminBar}
 
     <div class="card">
+      <h2>Kalender</h2>
+      <p class="muted" style="margin-top:-4px;font-size:13px">
+        Tryck på en dag för att boka${hasInterests() ? ' eller anmäla intresse' : ''}.
+        Passerade dagar är låsta.
+      </p>
+      ${buildCalendar(cal, {
+        interactive: true,
+        actingId: _app.acting,
+        isMine: c => c.userId === _app.acting
+      })}
+    </div>
+
+    <div class="card">
+      <h2>Mina kommande pass</h2>
+      ${upcoming}
+    </div>
+    ${interestCard}
+
+    <div class="card">
       <label style="display:flex;align-items:center;gap:10px;font-weight:normal;cursor:pointer">
         <input type="checkbox" id="res-toggle" ${acting.availableReserve ? 'checked' : ''}
                onchange="toggleReserve(this.checked)" style="width:20px;height:20px">
@@ -114,25 +133,6 @@ function drawApp(root) {
       <div class="row" style="margin-top:10px"><button class="btn" onclick="saveProfile()">Spara</button></div>
       <div id="pf-status" class="status"></div>
     </div>
-
-    <div class="card">
-      <h2>Kalender</h2>
-      <p class="muted" style="margin-top:-4px;font-size:13px">
-        Tryck på en dag för att boka${hasInterests() ? ' eller anmäla intresse' : ''}.
-        Passerade dagar är låsta.
-      </p>
-      ${buildCalendar(cal, {
-        interactive: true,
-        actingId: _app.acting,
-        isMine: c => c.userId === _app.acting
-      })}
-    </div>
-
-    <div class="card">
-      <h2>Mina kommande pass</h2>
-      ${upcoming}
-    </div>
-    ${interestCard}
   `;
 
   root.querySelectorAll('[data-act]').forEach(node => node.addEventListener('click', onAction));

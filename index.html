@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Opjour">
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='9' fill='%231c2b36'/><text x='22' y='29' font-family='Arial' font-size='18' font-weight='700' fill='%23e8a33d' text-anchor='middle'>OJ</text></svg>">
   <style>
     :root {
@@ -98,6 +99,8 @@
     .day.mine { background: var(--accent-soft); border-color: var(--accent); }
     .day.clickable { cursor: pointer; }
     .day.clickable:hover { border-color: var(--accent); }
+    .day .dwd { display: none; }
+    .old-toggle { display: none; }
     .badge-admin { font-size: 10px; color: var(--accent); font-weight: bold; }
     .day .tag { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; color: var(--interest); }
     .day .ints { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -119,6 +122,25 @@
     .phone { color: var(--interest); font-weight: bold; text-decoration: none; white-space: nowrap; }
     .plist { list-style: none; margin: 6px 0 0; padding: 0; }
     .plist li { padding: 3px 0; }
+    /* Mobil: kalendern blir en lodrät lista, en rad per dag, veckorubrik per vecka (ingen sidscroll) */
+    @media (max-width: 640px) {
+      main { padding: 12px; }
+      .card { padding: 12px; }
+      .cal { min-width: 0; }
+      .cal-head { display: none; }
+      .cal:not(.show-old) .cal-week.old { display: none; }
+      .old-toggle { display: block; margin: 0 0 10px; }
+      .cal-week { grid-template-columns: 1fr; gap: 4px; margin-bottom: 12px; }
+      .cal-week::before { content: attr(data-week); font-size: 12px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 2px 0; }
+      .day { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-height: 46px; padding: 8px 10px; font-size: 15px; }
+      .day.past { min-height: 36px; padding-top: 5px; padding-bottom: 5px; }
+      .day .dnum { min-width: 74px; font-size: 14px; color: var(--ink); }
+      .day .dwd { display: inline; }
+      .day .tag { font-size: 11px; }
+      .day .ints { font-size: 14px; }
+      .day .res { font-size: 14px; }
+      .big-today .name { font-size: 28px; }
+    }
     .big-today .phone-big { font-size: 26px; margin-top: 6px; }
     .big-today .plist { font-size: 22px; line-height: 1.6; }
     input[type=tel] { width: 100%; max-width: 360px; padding: 11px 10px; font-size: 17px; border: 1.5px solid var(--line); border-radius: 5px; background: #eef1f3; color: var(--ink); }
@@ -298,12 +320,15 @@
     function buildCalendar(cal, opts) {
       const { fromISO, toISO } = cal.window;
       const claimByDate = new Map(cal.claims.map(c => [c.serviceDate, c]));
-      let html = '<div class="cal-scroll"><div class="cal">';
+      let html = '<div class="cal-scroll"><button class="link-btn old-toggle" style="color:var(--interest)" '
+        + `onclick="const c=this.parentNode.querySelector('.cal');this.textContent=c.classList.toggle('show-old')?'Dölj äldsta veckan':'Visa äldsta veckan'">Visa äldsta veckan</button>`
+        + '<div class="cal">';
       html += '<div class="cal-head">' + SV_DAYS.map(d => `<div>${d}</div>`).join('') + '</div>';
 
       let d = fromISO;
       while (d <= toISO) {
-        html += '<div class="cal-week">';
+        // Den äldsta veckan döljs på mobil (knapp ovan); senaste veckan syns alltid.
+        html += `<div class="cal-week${d === fromISO ? ' old' : ''}" data-week="Vecka ${isoWeek(d)}">`;
         for (let i = 0; i < 7; i++) {
           html += dayCell(d, claimByDate.get(d), cal, opts);
           d = addDaysISO(d, 1);
@@ -322,7 +347,8 @@
       if (isToday) cls.push('today');
       if (isPast) cls.push('past');
 
-      let inner = `<span class="dnum">${day === 1 ? SV_MONTHS[m - 1] + ' ' : ''}${day}</span>`;
+      const wd = SV_DAYS[(new Date(dISO + 'T12:00:00Z').getUTCDay() + 6) % 7];
+      let inner = `<span class="dnum"><span class="dwd">${wd} </span>${day === 1 ? SV_MONTHS[m - 1] + ' ' : ''}${day}</span>`;
       const ints = (cal.interestsByDate && cal.interestsByDate[dISO]) || [];
 
       if (claim) {
@@ -352,6 +378,14 @@
     }
     function personLine(name, phone, prefix = '') {
       return `${prefix}<strong>${esc(name)}</strong>${phone ? ' · ' + phoneLink(phone) : ''}`;
+    }
+
+    // ISO-veckonummer (vecka 1 = veckan med årets första torsdag).
+    function isoWeek(iso) {
+      const d = new Date(iso + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3); // torsdagen i samma vecka
+      const week1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+      return 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7);
     }
 
     function addDaysISO(iso, n) {
