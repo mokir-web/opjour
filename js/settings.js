@@ -47,7 +47,9 @@ async function renderSettings(root) {
         <input type="password" id="st-pin-rep" inputmode="numeric" maxlength="4" autocomplete="new-password">
         <div class="row" style="margin-top:10px"><button class="btn" onclick="savePin()">Byt PIN</button></div>
         <div id="st-pin-status" class="status"></div>
-      </div>`;
+      </div>
+
+      <p class="muted" style="font-size:12px;text-align:center">Opjour ${esc(APP_VERSION)}</p>`;
   } catch (err) {
     root.innerHTML = `<p class="err">${esc(err.message)}</p>`;
   }
