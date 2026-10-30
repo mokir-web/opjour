@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <title>Opjour</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1c2b36">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Opjour">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='9' fill='%231c2b36'/><text x='22' y='29' font-family='Arial' font-size='18' font-weight='700' fill='%23e8a33d' text-anchor='middle'>OJ</text></svg>">
+  <style>
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --ink: #1c2b36;
+      --ink-soft: #5b6b75;
+      --bg: #e4e9ec;
+      --card: #ffffff;
+      --line: #c7d1d7;
+      --chrome: #1c2b36;
+      --accent: #b5641a;
+      --accent-soft: #f4e6d5;
+      --interest: #2e5b8a;
+      --interest-soft: #e3edf7;
+      --today: #1c2b36;
+      --danger: #b03020;
+      --ok: #2f6f4f;
+    }
+    * { box-sizing: border-box; }
+    html { overscroll-behavior-x: none; font-size: 16px; }
+    body {
+      margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 18px;
+      color: var(--ink); background: var(--bg); -webkit-text-size-adjust: 100%;
+    }
+    h1, h2, h3 { margin: 0 0 10px; color: var(--ink); }
+    h1 { font-size: 22px; }
+    h2 { font-size: 19px; }
+    button { font: inherit; cursor: pointer; }
+    .hidden { display: none !important; }
+    .muted { color: var(--ink-soft); }
+    .err { color: var(--danger); font-weight: bold; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* ── App-skal ─────────────────────────────────────────── */
+    header {
+      background: var(--chrome); color: #eef1f3;
+      padding: calc(var(--safe-top) + 12px) 16px 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    header .clinic { font-weight: bold; font-size: 16px; }
+    header button {
+      background: rgba(255,255,255,0.12); color: #eef1f3;
+      border: 1px solid rgba(255,255,255,0.28); border-radius: 5px; padding: 7px 12px; font-size: 14px;
+    }
+    main { max-width: 920px; margin: 0 auto; padding: 16px; }
+
+    .card {
+      background: var(--card); border: 1.5px solid var(--line); border-radius: 8px;
+      padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,30,38,0.06);
+    }
+
+    input[type=text], input[type=password], select {
+      width: 100%; max-width: 360px; padding: 11px 10px; font-size: 17px;
+      border: 1.5px solid var(--line); border-radius: 5px; background: #eef1f3; color: var(--ink);
+    }
+    label { display: block; font-weight: bold; margin: 10px 0 4px; font-size: 15px; }
+
+    .btn {
+      background: var(--accent); color: #fff; border: none; border-radius: 6px;
+      padding: 11px 18px; font-size: 16px; font-weight: bold;
+    }
+    .btn:disabled { opacity: 0.5; }
+    .btn-ghost { background: none; border: 1.5px solid var(--line); color: var(--ink); border-radius: 6px; padding: 9px 14px; font-size: 14px; font-weight: bold; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .tabs button { flex: 1; padding: 9px; border: 1.5px solid var(--line); background: #eef1f3; border-radius: 6px; font-size: 14px; }
+    .tabs button.active { background: var(--chrome); color: #fff; border-color: var(--chrome); }
+    .status { margin-top: 10px; font-size: 14px; }
+    .status.ok { color: var(--ok); }
+
+    /* ── Kalender ─────────────────────────────────────────── */
+    .cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cal { min-width: 680px; }
+    .cal-head, .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-head div { text-align: center; font-size: 12px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; padding: 4px 0; }
+    .cal-week { margin-bottom: 4px; }
+    .day {
+      background: var(--card); border: 1.5px solid var(--line); border-radius: 6px;
+      min-height: 66px; padding: 5px 6px; font-size: 13px; text-align: left;
+      display: flex; flex-direction: column; gap: 3px; width: 100%; color: var(--ink);
+    }
+    .day .dnum { font-size: 11px; color: var(--ink-soft); font-weight: bold; }
+    .day.other { opacity: 0.45; }
+    .day.today { border-color: var(--today); border-width: 2.5px; }
+    .day.past { background: #eef1f3; }
+    .day .who { font-weight: bold; line-height: 1.2; overflow-wrap: anywhere; }
+    .day .res { color: var(--ink-soft); font-style: italic; line-height: 1.15; }
+    .day.mine { background: var(--accent-soft); border-color: var(--accent); }
+    .day.clickable { cursor: pointer; }
+    .day.clickable:hover { border-color: var(--accent); }
+    .badge-admin { font-size: 10px; color: var(--accent); font-weight: bold; }
+    .day .tag { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; color: var(--interest); }
+    .day .ints { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+    .day.has-interest { background: var(--interest-soft); border-color: #9bb8d6; }
+    .day.my-interest { border-style: dashed; border-color: var(--interest); }
+
+    /* Dagsvy (bottom sheet på mobil, dialog på bredare skärmar) */
+    .overlay { position: fixed; inset: 0; background: rgba(20,30,38,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+    .sheet { background: var(--card); width: 100%; max-width: 520px; max-height: 85vh; overflow: auto; border-radius: 14px 14px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+    @media (min-width: 640px) { .overlay { align-items: center; } .sheet { border-radius: 14px; } }
+    .sheet h2 { display: flex; justify-content: space-between; align-items: center; }
+    .sheet h3 { font-size: 14px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; margin: 16px 0 4px; }
+    .chip { display: inline-block; background: var(--interest-soft); border: 1px solid #9bb8d6; border-radius: 14px; padding: 3px 11px; margin: 3px 4px 3px 0; font-size: 15px; }
+    .chip.me { background: var(--accent-soft); border-color: var(--accent); font-weight: bold; }
+    .btn-interest { background: var(--interest); }
+    .btn-danger { background: var(--danger); }
+    .btn-block { width: 100%; margin-top: 8px; }
+    .hint { font-size: 14px; color: var(--ink-soft); margin: 6px 0 0; }
+    .phone { color: var(--interest); font-weight: bold; text-decoration: none; white-space: nowrap; }
+    .plist { list-style: none; margin: 6px 0 0; padding: 0; }
+    .plist li { padding: 3px 0; }
+    .big-today .phone-big { font-size: 26px; margin-top: 6px; }
+    .big-today .plist { font-size: 22px; line-height: 1.6; }
+    input[type=tel] { width: 100%; max-width: 360px; padding: 11px 10px; font-size: 17px; border: 1.5px solid var(--line); border-radius: 5px; background: #eef1f3; color: var(--ink); }
+
+    .pass-card { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .pass-card:last-child { border-bottom: none; }
+    .link-btn { background: none; border: none; color: var(--danger); font-size: 14px; font-weight: bold; text-decoration: underline; padding: 4px; }
+
+    .big-today { text-align: center; padding: 22px 12px; }
+    .big-today .label { font-size: 15px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+    .big-today .name { font-size: 34px; font-weight: bold; margin-top: 6px; }
+    .big-today .reserves { font-size: 20px; margin-top: 8px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Inloggning ─────────────────────────────────────── -->
+  <main id="login" class="hidden">
+    <h1>Opjour</h1>
+    <div class="card">
+      <div class="tabs">
+        <button id="tab-user" class="active" onclick="showLoginTab('user')">Personlig</button>
+        <button id="tab-display" onclick="showLoginTab('display')">Visningsskärm</button>
+      </div>
+
+      <form id="form-user" onsubmit="return doUserLogin(event)">
+        <label for="li-username">Användarnamn</label>
+        <input type="text" id="li-username" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <label for="li-pin">PIN</label>
+        <input type="password" id="li-pin" inputmode="numeric" autocomplete="current-password">
+        <div class="row" style="margin-top:14px;"><button type="submit" class="btn">Logga in</button></div>
+        <div id="li-status" class="status err"></div>
+      </form>
+
+      <form id="form-display" class="hidden" onsubmit="return doDisplayLogin(event)">
+        <label for="ld-code">Klinikkod</label>
+        <input type="text" id="ld-code" autocapitalize="none" spellcheck="false">
+        <label for="ld-pin">Visnings-PIN</label>
+        <input type="password" id="ld-pin" inputmode="numeric">
+        <div class="row" style="margin-top:14px;"><button type="submit" class="btn">Öppna visningsvy</button></div>
+        <div id="ld-status" class="status err"></div>
+      </form>
+    </div>
+  </main>
+
+  <!-- ── Byt PIN (tvingat) ──────────────────────────────── -->
+  <main id="changepin" class="hidden">
+    <h1>Välj en ny PIN</h1>
+    <div class="card">
+      <form onsubmit="return doChangePin(event)">
+        <label for="cp-pin">Ny PIN (4 siffror)</label>
+        <input type="password" id="cp-pin" inputmode="numeric" maxlength="4" autocomplete="new-password">
+        <label for="cp-pin2">Upprepa</label>
+        <input type="password" id="cp-pin2" inputmode="numeric" maxlength="4" autocomplete="new-password">
+        <div class="row" style="margin-top:14px;"><button type="submit" class="btn">Spara</button></div>
+        <div id="cp-status" class="status err"></div>
+      </form>
+    </div>
+  </main>
+
+  <!-- ── App ───────────────────────────────────────────── -->
+  <div id="app" class="hidden">
+    <header>
+      <span class="clinic" id="app-clinic"></span>
+      <button onclick="logout()">Logga ut</button>
+    </header>
+    <main id="view"></main>
+  </div>
+
+  <script>
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:8080'
+      : 'https://opjour-backend-110110585004.europe-north1.run.app'; // byts när domänen är vald (opjour_migrationsplan.md §12)
+
+    const SV_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+    const SV_MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+    const state = {
+      token: localStorage.getItem('opjour_token') || null,
+      scope: localStorage.getItem('opjour_scope') || null,
+      clinicName: localStorage.getItem('opjour_clinic') || ''
+    };
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function el(id) { return document.getElementById(id); }
+
+    async function api(path, opts = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (state.token) headers.Authorization = 'Bearer ' + state.token;
+      const res = await fetch(API_BASE + path, {
+        method: opts.method || 'GET',
+        headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      });
+      const fresh = res.headers.get('X-Refreshed-Token');
+      if (fresh) { state.token = fresh; localStorage.setItem('opjour_token', fresh); }
+      if (res.status === 401) { logout(); throw new Error('Sessionen har gått ut.'); }
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
+      return data;
+    }
+
+    function saveSession(token, scope, clinicName) {
+      state.token = token; state.scope = scope; state.clinicName = clinicName || '';
+      localStorage.setItem('opjour_token', token);
+      localStorage.setItem('opjour_scope', scope);
+      localStorage.setItem('opjour_clinic', state.clinicName);
+    }
+
+    function logout() {
+      localStorage.removeItem('opjour_token');
+      localStorage.removeItem('opjour_scope');
+      localStorage.removeItem('opjour_clinic');
+      location.reload();
+    }
+
+    function showOnly(id) {
+      for (const s of ['login', 'changepin', 'app']) el(s).classList.toggle('hidden', s !== id);
+    }
+
+    function showLoginTab(which) {
+      el('tab-user').classList.toggle('active', which === 'user');
+      el('tab-display').classList.toggle('active', which === 'display');
+      el('form-user').classList.toggle('hidden', which !== 'user');
+      el('form-display').classList.toggle('hidden', which !== 'display');
+    }
+
+    async function doUserLogin(e) {
+      e.preventDefault();
+      el('li-status').textContent = '';
+      try {
+        const r = await api('/auth/login', { method: 'POST', body: { username: el('li-username').value, pin: el('li-pin').value } });
+        saveSession(r.token, 'user', r.clinicName);
+        if (r.mustChangePin) { showOnly('changepin'); return false; }
+        enterApp();
+      } catch (err) { el('li-status').textContent = err.message; }
+      return false;
+    }
+
+    async function doDisplayLogin(e) {
+      e.preventDefault();
+      el('ld-status').textContent = '';
+      try {
+        const r = await api('/auth/display-login', { method: 'POST', body: { code: el('ld-code').value, pin: el('ld-pin').value } });
+        saveSession(r.token, 'display', r.clinicName);
+        enterApp();
+      } catch (err) { el('ld-status').textContent = err.message; }
+      return false;
+    }
+
+    async function doChangePin(e) {
+      e.preventDefault();
+      const a = el('cp-pin').value, b = el('cp-pin2').value;
+      el('cp-status').textContent = '';
+      if (a !== b) { el('cp-status').textContent = 'PIN-koderna matchar inte.'; return false; }
+      try {
+        await api('/auth/change-pin', { method: 'POST', body: { newPin: a } });
+        enterApp();
+      } catch (err) { el('cp-status').textContent = err.message; }
+      return false;
+    }
+
+    function enterApp() {
+      showOnly('app');
+      el('app-clinic').textContent = state.clinicName;
+      if (state.scope === 'display') renderDisplay(el('view'));
+      else renderApp(el('view'));
+    }
+
+    // ── Delad kalender-render ──────────────────────────────
+    // opts: { interactive, isMine(claim), actingId }
+    // Visningsprioritet per dag: bokning > intresserade > reserv (reserv bara idag/framåt).
+    // Interaktiva celler får data-act="day" + data-date; app.js öppnar dagsvyn.
+    function buildCalendar(cal, opts) {
+      const { fromISO, toISO } = cal.window;
+      const claimByDate = new Map(cal.claims.map(c => [c.serviceDate, c]));
+      let html = '<div class="cal-scroll"><div class="cal">';
+      html += '<div class="cal-head">' + SV_DAYS.map(d => `<div>${d}</div>`).join('') + '</div>';
+
+      let d = fromISO;
+      while (d <= toISO) {
+        html += '<div class="cal-week">';
+        for (let i = 0; i < 7; i++) {
+          html += dayCell(d, claimByDate.get(d), cal, opts);
+          d = addDaysISO(d, 1);
+        }
+        html += '</div>';
+      }
+      html += '</div></div>';
+      return html;
+    }
+
+    function dayCell(dISO, claim, cal, opts) {
+      const [y, m, day] = dISO.split('-').map(Number);
+      const isToday = dISO === cal.todayISO;
+      const isPast = dISO < cal.todayISO;
+      const cls = ['day'];
+      if (isToday) cls.push('today');
+      if (isPast) cls.push('past');
+
+      let inner = `<span class="dnum">${day === 1 ? SV_MONTHS[m - 1] + ' ' : ''}${day}</span>`;
+      const ints = (cal.interestsByDate && cal.interestsByDate[dISO]) || [];
+
+      if (claim) {
+        if (opts.isMine && opts.isMine(claim)) cls.push('mine');
+        inner += `<span class="who">${esc(claim.displayName)}</span>`;
+        if (claim.createdByAdmin) inner += `<span class="badge-admin">bokad av admin</span>`;
+      } else if (ints.length && !isPast) {
+        cls.push('has-interest');
+        if (opts.actingId && ints.some(i => i.userId === opts.actingId)) cls.push('my-interest');
+        const shown = ints.slice(0, 2).map(i => esc(i.displayName)).join(', ');
+        inner += `<span class="tag">intresse · ${ints.length}</span>`
+               + `<span class="ints">${shown}${ints.length > 2 ? ` +${ints.length - 2} till` : ''}</span>`;
+      } else if (!isPast) {
+        const res = (cal.reservesByDate && cal.reservesByDate[dISO]) || [];
+        if (res.length) inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>`;
+      }
+
+      if (!opts.interactive) return `<div class="${cls.join(' ')}">${inner}</div>`;
+      cls.push('clickable');
+      return `<button class="${cls.join(' ')}" data-act="day" data-date="${dISO}">${inner}</button>`;
+    }
+
+    // Telefonnummer visas bara för dagens aktuella person(er) — servern skickar det inte för andra.
+    function phoneLink(p) {
+      if (!p) return '';
+      return `<a class="phone" href="tel:${esc(p.replace(/[^\d+]/g, ''))}">${esc(p)}</a>`;
+    }
+    function personLine(name, phone, prefix = '') {
+      return `${prefix}<strong>${esc(name)}</strong>${phone ? ' · ' + phoneLink(phone) : ''}`;
+    }
+
+    function addDaysISO(iso, n) {
+      const dt = new Date(iso + 'T12:00:00Z');
+      dt.setUTCDate(dt.getUTCDate() + n);
+      return dt.toISOString().slice(0, 10);
+    }
+    function fmtDateLong(iso) {
+      const [y, m, d] = iso.split('-').map(Number);
+      const wd = SV_DAYS[(new Date(iso + 'T12:00:00Z').getUTCDay() + 6) % 7];
+      return `${wd} ${d} ${SV_MONTHS[m - 1]}`;
+    }
+
+    // ── Boot ──────────────────────────────────────────────
+    if (state.token && (state.scope === 'user' || state.scope === 'display')) enterApp();
+    else showOnly('login');
+  </script>
+
+  <script src="js/app.js"></script>
+  <script src="js/display.js"></script>
+</body>
+</html>
