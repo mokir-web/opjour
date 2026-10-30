@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Opjour</title>
+  <rect width="64" height="64" rx="14" fill="#1c2b36"/>
+  <rect x="11" y="16" width="42" height="38" rx="6" fill="none" stroke="#e8a33d" stroke-width="3.2"/>
+  <path d="M11 27h42" stroke="#e8a33d" stroke-width="3.2"/>
+  <path d="M22 10.5v9M42 10.5v9" stroke="#e8a33d" stroke-width="3.4" stroke-linecap="round"/>
+  <g transform="translate(15.4 48.1) rotate(-24) scale(0.7)">
+    <g fill="#1c2b36" stroke="#1c2b36" stroke-width="3.4" stroke-linejoin="round"><path d="M2.6 -3.7 H22.5 L25 -2.7 V2.7 L22.5 3.7 H2.6 A3.7 3.7 0 0 1 2.6 -3.7 Z"/><path d="M24.6 -1.5 H31 V1.5 H24.6 Z"/><path d="M30 -1.5 L33.4 -3.6 Q43.5 -4.4 52.5 0.6 Q44 7.2 33.2 3.6 L30 1.5 Z"/></g>
+    <g fill="#e8a33d"><path d="M2.6 -3.7 H22.5 L25 -2.7 V2.7 L22.5 3.7 H2.6 A3.7 3.7 0 0 1 2.6 -3.7 Z"/><path d="M24.6 -1.5 H31 V1.5 H24.6 Z"/><path d="M30 -1.5 L33.4 -3.6 Q43.5 -4.4 52.5 0.6 Q44 7.2 33.2 3.6 L30 1.5 Z"/></g>
+    <path d="M7 -2.5v5M11 -2.5v5M15 -2.5v5" stroke="#1c2b36" stroke-width="1.15" stroke-linecap="round"/>
+    <path d="M34.5 -0.9 Q42 -2.4 48.6 0.35" fill="none" stroke="#1c2b36" stroke-width="0.9" stroke-linecap="round" opacity=".55"/>
+  </g>
+</svg>

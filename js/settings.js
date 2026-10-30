@@ -1,7 +1,7 @@
 // ── Inställningar (#/settings) ───────────────────────────────────────────
-// Klassiskt script. Beror på index.html: api(), esc(), el(), setMenuForUser().
-// Egna uppgifter: reservstatus, kontaktuppgifter (telefon; namn ändras bara av admin) och byte av PIN.
-// Admin ändrar andras uppgifter på Admin-sidan.
+// Klassiskt script. Beror på index.html: api(), esc(), el(), setMenuForUser(), state, APP_VERSION.
+// Alla kan ändra alla sina egna uppgifter — namn, användarnamn och telefon — och byta PIN. Det enda man inte kan
+// ändra är kliniktillhörigheten. (Reservtoggeln finns på startsidan; admin hanterar andras uppgifter på Admin-sidan.)
 
 let _settings = null;
 
@@ -15,24 +15,16 @@ async function renderSettings(root) {
       <h1 class="page">Inställningar</h1>
 
       <div class="card">
-        <h2>Reservstatus</h2>
-        <label class="check" style="margin-top:0">
-          <input type="checkbox" id="st-reserve" ${me.availableReserve ? 'checked' : ''} onchange="setReserve(this.checked)">
-          Jag är tillgänglig som reserv
-        </label>
-        <p class="hint">Reserven rullar dag för dag bland dem som är tillgängliga. Är du markerad förväntas du kunna ta jouren om ingen annan skrivit upp sig — avmarkera hellre om du är otillgänglig.</p>
-        <div id="st-reserve-status" class="status"></div>
-      </div>
-
-      <div class="card">
-        <h2>Kontaktuppgifter</h2>
-        ${me.isAdmin
-          ? `<label for="st-name" style="margin-top:0">Fullständigt namn</label>
-             <input type="text" id="st-name" value="${esc(me.displayName)}" maxlength="60">`
-          : `<label style="margin-top:0">Namn</label><div>${esc(me.displayName)} <span class="muted">(ändras av admin)</span></div>`}
+        <h2>Mina uppgifter</h2>
+        <label for="st-name" style="margin-top:0">Fullständigt namn</label>
+        <input type="text" id="st-name" value="${esc(me.displayName)}" maxlength="60" autocomplete="name">
+        <label for="st-user">Användarnamn</label>
+        <input type="text" id="st-user" value="${esc(me.username || '')}" maxlength="60" autocapitalize="none" spellcheck="false" autocomplete="username">
         <label for="st-phone">Telefonnummer</label>
         <input type="tel" id="st-phone" value="${esc(me.phone || '')}" placeholder="070-123 45 67" maxlength="30" inputmode="tel" autocomplete="tel">
-        <p class="hint">Numret visas bara för den som är dagens opjour (eller intresserad/reserv när ingen är uppskriven) — aldrig i övrigt.</p>
+        <label style="margin-top:14px">Klinik</label>
+        <div>${esc(me.clinicName || state.clinicName)} <span class="muted">(ändras inte här)</span></div>
+        <p class="hint">Ditt namn och telefonnummer syns för alla som är inloggade på kliniken, i kalendern, så att man kan nå dig när du har jour eller är reserv. Byter du användarnamn loggar du in med det nya nästa gång.</p>
         <div class="row" style="margin-top:10px"><button class="btn" onclick="saveContact()">Spara</button></div>
         <div id="st-contact-status" class="status"></div>
       </div>
@@ -60,22 +52,13 @@ function stStatus(id, text, ok) {
   box.textContent = text; box.className = 'status ' + (ok ? 'ok' : 'err');
 }
 
-async function setReserve(available) {
-  try {
-    await api('/reserve', { method: 'PUT', body: { available } });
-    stStatus('st-reserve-status', available ? 'Du är nu tillgänglig som reserv.' : 'Du är inte längre reserv.', true);
-  } catch (err) {
-    stStatus('st-reserve-status', err.message, false);
-    el('st-reserve').checked = !available;
-  }
-}
-
 async function saveContact() {
   try {
-    const body = { phone: el('st-phone').value };
-    if (_settings.me.isAdmin) body.displayName = el('st-name').value;
-    await api('/profile', { method: 'PUT', body });
-    stStatus('st-contact-status', 'Sparat.', true);
+    const r = await api('/profile', { method: 'PUT', body: {
+      displayName: el('st-name').value, username: el('st-user').value, phone: el('st-phone').value
+    } });
+    stStatus('st-contact-status', r.username !== _settings.me.username ? `Sparat. Nästa gång loggar du in som "${r.username}".` : 'Sparat.', true);
+    _settings.me.username = r.username;
   } catch (err) { stStatus('st-contact-status', err.message, false); }
 }
 

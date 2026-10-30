@@ -46,26 +46,35 @@ function adminChips(u) {
   ].join(' ');
 }
 
+function sw(attrs, checked, disabled) {
+  return `<span class="switch"><input type="checkbox" role="switch" ${attrs} ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span class="track"><span class="knob"></span></span></span>`;
+}
+
 function userBlock(u, selfId) {
   const isSelf = u.id === selfId;
+  const bookings = u.claimCount ? ` · ${u.claimCount} bokning${u.claimCount === 1 ? '' : 'ar'}` : '';
   return `
     <details data-id="${esc(u.id)}"${_admin.open.has(u.id) ? ' open' : ''}>
       <summary>
         <span class="uname">${esc(u.displayName)}${isSelf ? ' <span class="muted">(du)</span>' : ''}</span>
-        <span class="uuser">${esc(u.username || '')}</span> ${adminChips(u)}
+        <span class="uuser">${esc(u.username || '')}${bookings}</span> ${adminChips(u)}
       </summary>
       <div class="body">
         <div class="field-row">
-          <div><label>${u.isDisplay ? 'Namn (visas som kontonamn)' : 'Fullständigt namn'}</label><input type="text" data-f="name" value="${esc(u.displayName)}" maxlength="60"></div>
+          <div><label>${u.isDisplay ? 'Namn (kontonamn)' : 'Fullständigt namn'}</label><input type="text" data-f="name" value="${esc(u.displayName)}" maxlength="60"></div>
+          <div><label>Användarnamn</label><input type="text" data-f="username" value="${esc(u.username || '')}" maxlength="60" autocapitalize="none" spellcheck="false"></div>
           ${u.isDisplay ? '' : `<div><label>Telefon</label><input type="tel" data-f="phone" value="${esc(u.phone || '')}" maxlength="30" inputmode="tel" placeholder="070-123 45 67"></div>`}
         </div>
         <div class="row" style="margin-top:10px"><button class="btn" data-a="save">Spara</button></div>
         ${u.isDisplay ? '<p class="hint">Visningskonto: loggar in som alla andra men ser bara kalendern (ingen bokning, ingen reserv).</p>' : `
-        <label class="check"><input type="checkbox" data-a="reserve" ${u.availableReserve ? 'checked' : ''}> Tillgänglig som reserv</label>
-        <label class="check"><input type="checkbox" data-a="admin" ${u.isAdmin ? 'checked' : ''} ${isSelf ? 'disabled' : ''}> Admin</label>`}
-        <label class="check"><input type="checkbox" data-a="active" ${u.active ? 'checked' : ''} ${isSelf ? 'disabled' : ''}> Aktiv (kan logga in)</label>
-        ${isSelf ? '<p class="hint">Du kan inte inaktivera dig själv eller ta bort din egen adminrätt.</p>' : ''}
-        <div class="row" style="margin-top:12px"><button class="btn-ghost" data-a="resetpin">Återställ PIN…</button></div>
+        <div class="opt-row" style="margin-top:12px"><span>Tillgänglig som reserv</span>${sw('data-a="reserve"', u.availableReserve)}</div>
+        <div class="opt-row"><span>Admin</span>${sw('data-a="admin"', u.isAdmin, isSelf)}</div>`}
+        <div class="opt-row"><span>Aktiv <span class="muted">(kan logga in)</span></span>${sw('data-a="active"', u.active, isSelf)}</div>
+        ${isSelf ? '<p class="hint">Du kan inte inaktivera, ta bort eller degradera dig själv.</p>' : ''}
+        <div class="row" style="margin-top:12px;gap:8px">
+          <button class="btn-ghost" data-a="resetpin">Återställ PIN…</button>
+          ${isSelf ? '' : '<button class="btn-ghost" style="color:var(--danger);border-color:#e3b3ab" data-a="delete">Radera användare…</button>'}
+        </div>
         <div class="status" data-s></div>
       </div>
     </details>`;
@@ -260,8 +269,10 @@ async function userAction(detailsEl, fn, okText) {
     const again = document.querySelector(`.ulist details[data-id="${CSS.escape(id)}"]`);
     if (again && okText) userStatus(again, okText, true);
   } catch (err) {
-    userStatus(detailsEl, err.message, false);
+    _admin.open.add(id);
     await reloadAdmin().catch(() => {});   // återställ kryssrutor som inte gick igenom
+    const again = document.querySelector(`.ulist details[data-id="${CSS.escape(id)}"]`);
+    userStatus(again || detailsEl, err.message, false);
   }
 }
 
@@ -272,11 +283,21 @@ function onUserClick(e) {
   const u = (_admin.me.roster || []).find(x => x.id === d.dataset.id);
   if (btn.dataset.a === 'save') {
     userAction(d, id => {
-      const body = { userId: id, displayName: d.querySelector('[data-f="name"]').value };
+      const body = { userId: id, displayName: d.querySelector('[data-f="name"]').value, username: d.querySelector('[data-f="username"]').value };
       const phone = d.querySelector('[data-f="phone"]');
       if (phone) body.phone = phone.value;
       return api('/profile', { method: 'PUT', body });
     }, 'Sparat.');
+  } else if (btn.dataset.a === 'delete') {
+    const n = u.claimCount || 0, f = u.futureClaimCount || 0;
+    const warn = n
+      ? `\n\n${u.displayName} har ${n} bokning${n === 1 ? '' : 'ar'}${f ? ` (varav ${f} kommande)` : ''} som också raderas ur kalendern och statistiken. Vill du behålla historiken ska du i stället stänga av "Aktiv".`
+      : '';
+    if (!confirm(`Radera ${u.displayName} (${u.username}) PERMANENT?${warn}\n\nDet går inte att ångra.`)) return;
+    userAction(d, async id => {
+      const r = await api('/admin/users/' + encodeURIComponent(id), { method: 'DELETE' });
+      _admin.notice = { tone: 'warn', html: `<strong>${esc(r.deleted)}</strong> är raderad${r.claimsRemoved ? ` (${r.claimsRemoved} bokning${r.claimsRemoved === 1 ? '' : 'ar'} togs bort)` : ''}.` };
+    });
   } else if (btn.dataset.a === 'resetpin') {
     if (!confirm(`Återställa PIN för ${u.displayName}? Den gamla slutar gälla${u.isDisplay ? '' : ' och personen måste välja en ny vid nästa inloggning'}.`)) return;
     const pin = randomPin();

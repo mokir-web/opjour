@@ -10,7 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Opjour">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='9' fill='%231c2b36'/><text x='22' y='29' font-family='Arial' font-size='18' font-weight='700' fill='%23e8a33d' text-anchor='middle'>OJ</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="icons/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <style>
     :root {
       --safe-top: env(safe-area-inset-top, 0px);
@@ -49,7 +50,11 @@
       padding: calc(var(--safe-top) + 12px) 16px 12px;
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
     }
-    header .clinic { font-weight: bold; font-size: 16px; color: #eef1f3; text-decoration: none; }
+    header .brand { display: flex; align-items: center; gap: 10px; color: #eef1f3; text-decoration: none; min-width: 0; }
+    header .brand img { border-radius: 8px; flex: none; }
+    header .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    header .brand-name { font-weight: bold; font-size: 17px; letter-spacing: 0.2px; }
+    header .clinic { font-size: 12px; color: #9fb2c0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #menu-wrap { position: relative; }
     #menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 190px; background: #fff; border: 1.5px solid var(--line); border-radius: 8px; box-shadow: 0 6px 18px rgba(20,30,38,0.28); z-index: 20; overflow: hidden; }
     header #menu a, header #menu button { display: block; width: 100%; text-align: left; padding: 13px 16px; font-size: 16px; color: var(--ink); text-decoration: none; background: none; border: none; border-radius: 0; }
@@ -61,6 +66,8 @@
       border: 1px solid rgba(255,255,255,0.28); border-radius: 5px; padding: 7px 12px; font-size: 14px;
     }
     main { max-width: 920px; margin: 0 auto; padding: 16px; }
+    main#view.wide { max-width: 1440px; }
+    @media (min-width: 1100px) { main#view.wide { padding: 20px 28px; } }
 
     .card {
       background: var(--card); border: 1.5px solid var(--line); border-radius: 8px;
@@ -87,30 +94,38 @@
 
     /* ── Kalender ─────────────────────────────────────────── */
     .cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .cal { min-width: 680px; }
-    .cal-head, .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .cal-head div { text-align: center; font-size: 12px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; padding: 4px 0; }
-    .cal-week { margin-bottom: 4px; }
+    .cal { min-width: 860px; }
+    .cal-head, .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .cal-head div { text-align: center; font-size: 13px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; padding: 5px 0; }
+    .cal-week { margin-bottom: 6px; }
     .day {
-      background: var(--card); border: 1.5px solid var(--line); border-radius: 6px;
-      min-height: 66px; padding: 5px 6px; font-size: 13px; text-align: left;
-      display: flex; flex-direction: column; gap: 3px; width: 100%; color: var(--ink);
+      background: var(--card); border: 1.5px solid var(--line); border-radius: 8px;
+      min-height: 116px; padding: 9px 11px; font-size: 14.5px; text-align: left;
+      display: flex; flex-direction: column; gap: 4px; width: 100%; color: var(--ink);
     }
-    .day .dnum { font-size: 11px; color: var(--ink-soft); font-weight: bold; }
+    .day .dnum { font-size: 12.5px; color: var(--ink-soft); font-weight: bold; }
     .day.other { opacity: 0.45; }
     .day.today { border-color: var(--today); border-width: 2.5px; }
     .day.past { background: #eef1f3; }
-    .day .who { font-weight: bold; line-height: 1.2; overflow-wrap: anywhere; }
-    .day .res { color: var(--ink-soft); font-style: italic; line-height: 1.15; }
+    .day .who { font-weight: bold; font-size: 15.5px; line-height: 1.2; overflow-wrap: anywhere; }
+    .day .res { color: var(--ink-soft); font-style: italic; line-height: 1.2; }
     .day.mine { background: var(--accent-soft); border-color: var(--accent); }
     .day.clickable { cursor: pointer; }
     .day.clickable:hover { border-color: var(--accent); }
+    .day.clickable:focus-visible { outline: 3px solid var(--interest); outline-offset: 2px; }
+    .day .pn { font-weight: bold; }
+    .day .pp { display: block; font-size: 13px; line-height: 1.25; }
+    .day .pp a { color: var(--interest); font-weight: bold; text-decoration: none; white-space: nowrap; }
+    .day ul.plist.cell { display: flex; flex-direction: column; gap: 4px; }
+    .day ul.plist.cell li { padding: 0; }
+    .cal-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+    .cal-nav .cal-range { flex: 1 1 200px; text-align: center; font-weight: bold; color: var(--ink); }
+    .cal-nav button { font-size: 14px; padding: 9px 14px; }
     .day .dwd, .day .dn-dm { display: none; }
     .day .today-pill { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px; background: var(--today); color: #fff; font-size: 10px; letter-spacing: 0.4px; vertical-align: 1px; }
     .day.today { box-shadow: 0 0 0 3px rgba(28,43,54,0.16); }
     .day .cphone { font-size: 12px; }
     .day .plist.cell { margin: 0; font-size: 12px; line-height: 1.3; }
-    .old-toggle { display: none; }
     .badge-admin { font-size: 10px; color: var(--accent); font-weight: bold; }
     .day .tag { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; color: var(--interest); }
     .day .ints { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -138,8 +153,8 @@
       .card { padding: 12px; }
       .cal { min-width: 0; }
       .cal-head { display: none; }
-      .cal:not(.show-old) .cal-week.old { display: none; }
-      .old-toggle { display: block; margin: 0 0 10px; }
+      .cal-nav .cal-range { order: -1; flex-basis: 100%; }
+      .cal-nav button { flex: 1 1 40%; }
       .cal-week { grid-template-columns: 1fr; gap: 4px; margin-bottom: 12px; }
       .cal-week::before { content: attr(data-week); font-size: 12px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 2px 0; }
       .day { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-height: 46px; padding: 8px 10px; font-size: 15px; }
@@ -148,12 +163,49 @@
       .day .dwd, .day .dn-dm { display: inline; }
       .day .dn-short { display: none; }
       .day .plist.cell { width: 100%; font-size: 14px; }
+      .day { min-height: 0; }
+      .day .pp { display: inline; font-size: 14px; margin-left: 6px; }
+      .day .who { font-size: 15px; }
       .day .tag { font-size: 11px; }
       .day .ints { font-size: 14px; }
       .day .res { font-size: 14px; }
       .big-today .name { font-size: 28px; }
     }
     h1.page { margin: 4px 0 14px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; margin: 0; font-weight: normal; font-size: 17px; }
+    .switch-row .sub { display: block; font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+    .switch { position: relative; flex: none; display: inline-block; }
+    .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .switch .track { display: block; width: 54px; height: 32px; border-radius: 16px; background: #b3bec6; position: relative; transition: background .18s; }
+    .switch .knob { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform .18s; }
+    .switch input:checked + .track { background: var(--ok); }
+    .switch input:checked + .track .knob { transform: translateX(22px); }
+    .switch input:focus-visible + .track { outline: 3px solid var(--interest); outline-offset: 2px; }
+    .switch input:disabled + .track { opacity: .45; }
+    .opt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+    .opt-row:first-of-type { border-top: none; }
+    .seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .seg button { background: #fff; border: none; padding: 9px 14px; font-size: 14px; border-right: 1px solid var(--line); }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: var(--chrome); color: #fff; font-weight: bold; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .stat-grid .card { margin-bottom: 0; }
+    .stat-big { font-size: 46px; font-weight: bold; line-height: 1; }
+    .bar { background: #e3e9ed; border-radius: 5px; height: 12px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+    .bar.blue > span { background: var(--interest); }
+    .brow { display: grid; grid-template-columns: minmax(110px, 170px) 1fr auto; gap: 10px; align-items: center; padding: 5px 0; font-size: 14px; }
+    .brow .n { font-variant-numeric: tabular-nums; color: var(--ink-soft); min-width: 62px; text-align: right; }
+    .cols { display: flex; align-items: flex-end; gap: 4px; height: 130px; margin-top: 8px; }
+    .cols .c { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
+    .cols .c i { display: block; width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+    .cols .c.blue i { background: var(--interest); }
+    .cols .c span { font-size: 10.5px; color: var(--ink-soft); margin-top: 4px; white-space: nowrap; }
+    .cols .c b { font-size: 11px; margin-bottom: 2px; font-weight: normal; color: var(--ink-soft); }
+    .stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .stats-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--ink-soft); padding: 4px 8px 6px 0; }
+    .stats-table td { padding: 7px 8px 7px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+    .stats-table td.num, .stats-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
     .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
     .field-row > div { flex: 1 1 220px; }
     .check { display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer; margin: 10px 0 0; }
@@ -195,7 +247,7 @@
 
   <!-- ── Inloggning ─────────────────────────────────────── -->
   <main id="login" class="hidden">
-    <h1>Opjour</h1>
+    <div style="text-align:center;margin:8px 0 14px"><img src="icons/logo.svg" width="96" height="96" alt="Opjour" style="border-radius:20px"><h1 style="margin:10px 0 0">Opjour</h1></div>
     <div class="card">
       <form id="form-user" onsubmit="return doLogin(event)">
         <label for="li-username" style="margin-top:0">Användarnamn</label>
@@ -227,7 +279,10 @@
   <!-- ── App ───────────────────────────────────────────── -->
   <div id="app" class="hidden">
     <header>
-      <a class="clinic" id="app-clinic" href="#/"></a>
+      <a class="brand" href="#/" aria-label="Opjour — startsidan">
+        <img src="icons/logo.svg" width="34" height="34" alt="">
+        <span class="brand-text"><span class="brand-name">Opjour</span><span class="clinic" id="app-clinic"></span></span>
+      </a>
       <button id="logout-btn" class="hidden" onclick="logout()">Logga ut</button>
       <div id="menu-wrap" class="hidden">
         <button id="menu-btn" onclick="toggleMenu(event)" aria-haspopup="true" aria-expanded="false">Meny ▾</button>
@@ -235,6 +290,7 @@
           <a href="#/" data-route="">Kalender</a>
           <a href="#/settings" data-route="#/settings">Inställningar</a>
           <a href="#/admin" data-route="#/admin" id="menu-admin" class="hidden">Admin</a>
+          <a href="#/stats" data-route="#/stats" id="menu-stats" class="hidden">Statistik</a>
           <hr>
           <button onclick="logout()">Logga ut</button>
         </nav>
@@ -248,7 +304,7 @@
       ? 'http://localhost:8080'
       : 'https://opjour-backend-110110585004.europe-north1.run.app'; // byts när domänen är vald (opjour_migrationsplan.md §12)
 
-    const APP_VERSION = '0.3.0';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
+    const APP_VERSION = '0.4.0';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
 
     const SV_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
     const SV_DAYS_FULL = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
@@ -335,7 +391,7 @@
       el('app-clinic').textContent = state.clinicName;
       el('menu-wrap').classList.toggle('hidden', state.scope !== 'user');
       el('logout-btn').classList.toggle('hidden', state.scope === 'user');
-      if (state.scope === 'display') renderDisplay(el('view'));
+      if (state.scope === 'display') { el('view').classList.add('wide'); renderDisplay(el('view')); }
       else route();
     }
 
@@ -348,8 +404,10 @@
       const h = location.hash;
       el('menu').querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.route === (h === '#/' ? '' : h)));
       const root = el('view');
+      root.classList.toggle('wide', h !== '#/settings' && h !== '#/admin' && h !== '#/stats');   // bred kalender bara på startsidan
       if (h === '#/settings') renderSettings(root);
       else if (h === '#/admin') renderAdmin(root);
+      else if (h === '#/stats') renderStats(root);
       else renderApp(root);
       window.scrollTo(0, 0);
     }
@@ -364,7 +422,7 @@
     document.addEventListener('click', e => { if (!el('menu-wrap').contains(e.target)) closeMenu(); });
 
     // Menyvalet "Admin" syns bara för admin — anropas av varje vy när /me är hämtad.
-    function setMenuForUser(me) { el('menu-admin').classList.toggle('hidden', !me.isAdmin); }
+    function setMenuForUser(me) { el('menu-admin').classList.toggle('hidden', !me.isAdmin); el('menu-stats').classList.toggle('hidden', !me.isAdmin); }
 
     // ── Delad kalender-render ──────────────────────────────
     // opts: { interactive, isMine(claim), actingId }
@@ -373,15 +431,12 @@
     function buildCalendar(cal, opts) {
       const { fromISO, toISO } = cal.window;
       const claimByDate = new Map(cal.claims.map(c => [c.serviceDate, c]));
-      let html = '<div class="cal-scroll"><button class="link-btn old-toggle" style="color:var(--interest)" '
-        + `onclick="const c=this.parentNode.querySelector('.cal');this.textContent=c.classList.toggle('show-old')?'Dölj äldsta veckan':'Visa äldsta veckan'">Visa äldsta veckan</button>`
-        + '<div class="cal">';
+      let html = '<div class="cal-scroll"><div class="cal">';
       html += '<div class="cal-head">' + SV_DAYS.map(d => `<div>${d}</div>`).join('') + '</div>';
 
       let d = fromISO;
       while (d <= toISO) {
-        // Den äldsta veckan döljs på mobil (knapp ovan); senaste veckan syns alltid.
-        html += `<div class="cal-week${d === fromISO ? ' old' : ''}" data-week="Vecka ${isoWeek(d)}">`;
+        html += `<div class="cal-week" data-week="Vecka ${isoWeek(d)}">`;
         for (let i = 0; i < 7; i++) {
           html += dayCell(d, claimByDate.get(d), cal, opts);
           d = addDaysISO(d, 1);
@@ -407,42 +462,42 @@
         + `<span class="dn-dm">${fmtDM(dISO)}</span>`
         + (isToday ? '<span class="today-pill">IDAG</span>' : '') + '</span>';
       const ints = (cal.interestsByDate && cal.interestsByDate[dISO]) || [];
-      const detail = isToday && opts.todayDetail;   // idag: visa telefon för den/de som är aktuella
+      const pp = phone => (phone ? `<span class="pp">${phoneLink(phone)}</span>` : '');
+      const person = (p, prefix = '') => `<li>${prefix}<span class="pn">${esc(p.displayName)}</span>${pp(p.phone)}</li>`;
 
       if (claim) {
         if (opts.isMine && opts.isMine(claim)) cls.push('mine');
-        inner += `<span class="who">${esc(claim.displayName)}</span>`;
-        if (detail && cal.opjourToday && cal.opjourToday.phone) inner += `<span class="cphone">${phoneLink(cal.opjourToday.phone)}</span>`;
+        inner += `<span class="who">${esc(claim.displayName)}</span>${pp(claim.phone)}`;
         if (claim.createdByAdmin) inner += `<span class="badge-admin">bokad av admin</span>`;
       } else if (ints.length && !isPast) {
         cls.push('has-interest');
         if (opts.actingId && ints.some(i => i.userId === opts.actingId)) cls.push('my-interest');
-        inner += `<span class="tag">intresse · ${ints.length}</span>`;
-        if (detail) {
-          inner += `<ul class="plist cell">${ints.map(i => `<li><strong>${esc(i.displayName)}</strong>${i.phone ? ' ' + phoneLink(i.phone) : ''}</li>`).join('')}</ul>`;
-        } else {
-          const shown = ints.slice(0, 2).map(i => esc(i.displayName)).join(', ');
-          inner += `<span class="ints">${shown}${ints.length > 2 ? ` +${ints.length - 2} till` : ''}</span>`;
-        }
+        inner += `<span class="tag">intresse · ${ints.length}</span><ul class="plist cell">${ints.map(i => person(i)).join('')}</ul>`;
       } else if (!isPast) {
         const res = (cal.reservesByDate && cal.reservesByDate[dISO]) || [];
-        if (detail && cal.reservesToday && cal.reservesToday.length) {
-          inner += `<span class="tag" style="color:var(--ink-soft)">reserv</span>`
-            + `<ul class="plist cell">${cal.reservesToday.map((r, i) => `<li>${i + 1}. <strong>${esc(r.displayName)}</strong>${r.phone ? ' ' + phoneLink(r.phone) : ''}</li>`).join('')}</ul>`;
+        if (isToday && opts.todayDetail && res.length) {
+          inner += `<span class="tag" style="color:var(--ink-soft)">reserv</span><ul class="plist cell">${res.map((r, i) => person(r, `${i + 1}. `)).join('')}</ul>`;
         } else if (res.length) {
-          inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>`;
+          inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>${pp(res[0].phone)}`;
         }
       }
 
       if (!opts.interactive) return `<div class="${cls.join(' ')}">${inner}</div>`;
       cls.push('clickable');
-      return `<button class="${cls.join(' ')}" data-act="day" data-date="${dISO}">${inner}</button>`;
+      return `<div class="${cls.join(' ')}" role="button" tabindex="0" data-act="day" data-date="${dISO}">${inner}</div>`;
     }
 
     // Telefonnummer visas bara för dagens aktuella person(er) — servern skickar det inte för andra.
     function phoneLink(p) {
       if (!p) return '';
       return `<a class="phone" href="tel:${esc(p.replace(/[^\d+]/g, ''))}">${esc(p)}</a>`;
+    }
+    // Dagens datum i Stockholm (YYYY-MM-DD) — samma "idag" som servern räknar med.
+    function todayStockholm() {
+      return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    }
+    function mondayOfISO(iso) {
+      return addDaysISO(iso, -((new Date(iso + 'T12:00:00Z').getUTCDay() + 6) % 7));
     }
     function personLine(name, phone, prefix = '') {
       return `${prefix}<strong>${esc(name)}</strong>${phone ? ' · ' + phoneLink(phone) : ''}`;
@@ -485,6 +540,7 @@
   <script src="js/import.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/stats.js"></script>
   <script src="js/display.js"></script>
 </body>
 </html>
