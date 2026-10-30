@@ -1,10 +1,11 @@
-// ── Personlig vy (EN sida) ────────────────────────────────────────────────
-// Klassiskt script. Beror på index.html: api(), esc(), el(), state,
-// buildCalendar(), fmtDateLong(). Global entry: renderApp(root).
+// ── Startsida: kalendern (personlig vy) ──────────────────────────────────
+// Klassiskt script. Beror på index.html: api(), esc(), el(), state, buildCalendar(),
+// fmtDateLong(), personLine(), setMenuForUser(). Global entry: renderApp(root).
 //
-// Dagar visas med prioritet bokning > intresserade > reserv. Tryck på en dag öppnar
-// dagsvyn (sheet) där man bokar, anmäler intresse eller tar bort sin bokning.
-// Intresse-funktionen aktiveras av att /calendar returnerar interestsByDate.
+// Dagar visas med prioritet bokning > intresserade > reserv. Idag markeras i kalendern
+// (IDAG-märke, tjock ram) och visar vem som är aktuell + telefon direkt i dagens ruta.
+// Tryck på en dag öppnar dagsvyn (sheet) där man bokar, anmäler intresse eller tar bort sin bokning.
+// Inställningar och admin ligger på egna sidor (js/settings.js, js/admin.js).
 
 let _app = null;
 
@@ -12,8 +13,13 @@ async function renderApp(root) {
   root.innerHTML = '<p class="muted">Laddar…</p>';
   try {
     const [cal, me] = await Promise.all([api('/calendar'), api('/me')]);
+    setMenuForUser(me);
     _app = { cal, me, acting: me.userId, sheet: null };
     drawApp(root);
+    // På mobil: scrolla så att dagens rad syns (äldre veckor ligger ovanför).
+    if (window.matchMedia('(max-width: 640px)').matches) {
+      document.querySelector('.day.today')?.scrollIntoView({ block: 'center' });
+    }
   } catch (err) {
     root.innerHTML = `<p class="err">${esc(err.message)}</p>`;
   }
@@ -28,7 +34,7 @@ async function reloadApp() {
 
 function actingUser() {
   const { me, acting } = _app;
-  const self = { id: me.userId, displayName: me.displayName, phone: me.phone || '', availableReserve: me.availableReserve };
+  const self = { id: me.userId, displayName: me.displayName };
   if (acting === me.userId) return self;
   return (me.roster || []).find(u => u.id === acting) || self;
 }
@@ -37,38 +43,21 @@ const hasInterests = () => !!_app.cal.interestsByDate;
 const interestsFor = d => (_app.cal.interestsByDate && _app.cal.interestsByDate[d]) || [];
 const claimFor = d => _app.cal.claims.find(c => c.serviceDate === d);
 
-// Dagens status enligt prioriteten bokning > intresserade > reserv.
-function todayHtml() {
-  const { cal } = _app;
-  if (cal.opjourToday) return `Dagens opjour:<ul class="plist"><li>${personLine(cal.opjourToday.displayName, cal.opjourToday.phone)}</li></ul>`;
-  const ints = interestsFor(cal.todayISO);
-  if (ints.length) {
-    return `Ingen uppskriven. Intresserade:<ul class="plist">${ints.map(i => `<li>${personLine(i.displayName, i.phone)}${i.userId === _app.me.userId ? ' <span class="muted">(du)</span>' : ''}</li>`).join('')}</ul>`
-         + `<p class="hint">Kom överens med varandra — sedan bokar en av er.</p>`;
-  }
-  if (cal.reservesToday.length) {
-    return `Ingen uppskriven. Reserv:<ul class="plist">${cal.reservesToday.map((r, i) => `<li>${personLine(r.displayName, r.phone, `${i + 1}. `)}</li>`).join('')}</ul>`;
-  }
-  return 'Ingen uppskriven, ingen reserv tillgänglig';
-}
-
 function drawApp(root) {
   const { cal, me } = _app;
-  const acting = actingUser();
-  const isSelf = acting.id === me.userId;
 
   let adminBar = '';
   if (me.isAdmin) {
     const opts = (me.roster || []).filter(u => u.active).map(u =>
       `<option value="${esc(u.id)}"${u.id === _app.acting ? ' selected' : ''}>${esc(u.displayName)}${u.id === me.userId ? ' (jag)' : ''}</option>`
     ).join('');
-    adminBar = `<div class="card"><label for="acting">Boka / ändra åt</label>
+    adminBar = `<div class="card"><label for="acting" style="margin-top:0">Boka / anmäl åt</label>
       <select id="acting" onchange="_app.acting=this.value;drawApp(el('view'))">${opts}</select></div>`;
   }
 
   const upcoming = (me.upcoming || []).length
     ? me.upcoming.map(u =>
-        `<div class="pass-card"><span>${esc(fmtDateLong(u.serviceDate))} <span class="muted">${u.serviceDate}</span></span>
+        `<div class="pass-card"><span>${esc(fmtDateLong(u.serviceDate))}</span>
          <button class="link-btn" data-act="remove" data-id="${esc(u.id)}" data-name="${esc(me.displayName)}" data-date="${u.serviceDate}">Ta bort</button></div>`
       ).join('')
     : '<p class="muted">Inga kommande pass.</p>';
@@ -88,11 +77,6 @@ function drawApp(root) {
   }
 
   root.innerHTML = `
-    <div class="card">
-      <h2>Idag ${cal.todayISO}</h2>
-      <p style="font-size:20px;margin:0">${todayHtml()}</p>
-    </div>
-
     ${adminBar}
 
     <div class="card">
@@ -103,6 +87,7 @@ function drawApp(root) {
       </p>
       ${buildCalendar(cal, {
         interactive: true,
+        todayDetail: true,
         actingId: _app.acting,
         isMine: c => c.userId === _app.acting
       })}
@@ -113,26 +98,6 @@ function drawApp(root) {
       ${upcoming}
     </div>
     ${interestCard}
-
-    <div class="card">
-      <label style="display:flex;align-items:center;gap:10px;font-weight:normal;cursor:pointer">
-        <input type="checkbox" id="res-toggle" ${acting.availableReserve ? 'checked' : ''}
-               onchange="toggleReserve(this.checked)" style="width:20px;height:20px">
-        ${isSelf ? 'Jag är tillgänglig som reserv' : esc(acting.displayName) + ' är tillgänglig som reserv'}
-      </label>
-      <div id="res-status" class="status"></div>
-    </div>
-
-    <div class="card">
-      <h2>Kontaktuppgifter${isSelf ? '' : ' – ' + esc(acting.displayName)}</h2>
-      ${me.isAdmin ? `<label for="pf-name">Fullständigt namn</label>
-        <input type="text" id="pf-name" value="${esc(acting.displayName)}" maxlength="60">` : ''}
-      <label for="pf-phone">Telefonnummer</label>
-      <input type="tel" id="pf-phone" value="${esc(acting.phone || '')}" placeholder="070-123 45 67" maxlength="30" inputmode="tel">
-      <p class="hint">Numret visas bara för den som är dagens opjour (eller intresserad/reserv när ingen är uppskriven) — aldrig i övrigt.</p>
-      <div class="row" style="margin-top:10px"><button class="btn" onclick="saveProfile()">Spara</button></div>
-      <div id="pf-status" class="status"></div>
-    </div>
   `;
 
   root.querySelectorAll('[data-act]').forEach(node => node.addEventListener('click', onAction));
@@ -247,36 +212,5 @@ async function onAction(e) {
     }
   } catch (err) {
     alert(err.message);
-  }
-}
-
-async function toggleReserve(available) {
-  const s = el('res-status');
-  s.textContent = ''; s.className = 'status';
-  try {
-    const who = actingUser();
-    const body = { available };
-    if (who.id !== _app.me.userId) body.userId = who.id;
-    await api('/reserve', { method: 'PUT', body });
-    await reloadApp();
-  } catch (err) {
-    s.textContent = err.message; s.className = 'status err';
-    el('res-toggle').checked = !available;
-  }
-}
-
-async function saveProfile() {
-  const st = el('pf-status');
-  st.textContent = ''; st.className = 'status';
-  try {
-    const who = actingUser();
-    const body = { phone: el('pf-phone').value };
-    if (_app.me.isAdmin) body.displayName = el('pf-name').value;
-    if (who.id !== _app.me.userId) body.userId = who.id;
-    await api('/profile', { method: 'PUT', body });
-    await reloadApp();
-    const st2 = el('pf-status'); st2.textContent = 'Sparat.'; st2.className = 'status ok';
-  } catch (err) {
-    st.textContent = err.message; st.className = 'status err';
   }
 }

@@ -49,7 +49,13 @@
       padding: calc(var(--safe-top) + 12px) 16px 12px;
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
     }
-    header .clinic { font-weight: bold; font-size: 16px; }
+    header .clinic { font-weight: bold; font-size: 16px; color: #eef1f3; text-decoration: none; }
+    #menu-wrap { position: relative; }
+    #menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 190px; background: #fff; border: 1.5px solid var(--line); border-radius: 8px; box-shadow: 0 6px 18px rgba(20,30,38,0.28); z-index: 20; overflow: hidden; }
+    header #menu a, header #menu button { display: block; width: 100%; text-align: left; padding: 13px 16px; font-size: 16px; color: var(--ink); text-decoration: none; background: none; border: none; border-radius: 0; }
+    header #menu a:hover, header #menu button:hover { background: #eef1f3; }
+    header #menu a.active { font-weight: bold; background: var(--accent-soft); }
+    header #menu hr { border: none; border-top: 1px solid var(--line); margin: 0; }
     header button {
       background: rgba(255,255,255,0.12); color: #eef1f3;
       border: 1px solid rgba(255,255,255,0.28); border-radius: 5px; padding: 7px 12px; font-size: 14px;
@@ -61,7 +67,7 @@
       padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(20,30,38,0.06);
     }
 
-    input[type=text], input[type=password], select {
+    input[type=text], input[type=password], input[type=tel], select {
       width: 100%; max-width: 360px; padding: 11px 10px; font-size: 17px;
       border: 1.5px solid var(--line); border-radius: 5px; background: #eef1f3; color: var(--ink);
     }
@@ -99,7 +105,11 @@
     .day.mine { background: var(--accent-soft); border-color: var(--accent); }
     .day.clickable { cursor: pointer; }
     .day.clickable:hover { border-color: var(--accent); }
-    .day .dwd { display: none; }
+    .day .dwd, .day .dn-dm { display: none; }
+    .day .today-pill { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px; background: var(--today); color: #fff; font-size: 10px; letter-spacing: 0.4px; vertical-align: 1px; }
+    .day.today { box-shadow: 0 0 0 3px rgba(28,43,54,0.16); }
+    .day .cphone { font-size: 12px; }
+    .day .plist.cell { margin: 0; font-size: 12px; line-height: 1.3; }
     .old-toggle { display: none; }
     .badge-admin { font-size: 10px; color: var(--accent); font-weight: bold; }
     .day .tag { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; color: var(--interest); }
@@ -134,16 +144,36 @@
       .cal-week::before { content: attr(data-week); font-size: 12px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 2px 0; }
       .day { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-height: 46px; padding: 8px 10px; font-size: 15px; }
       .day.past { min-height: 36px; padding-top: 5px; padding-bottom: 5px; }
-      .day .dnum { min-width: 74px; font-size: 14px; color: var(--ink); }
-      .day .dwd { display: inline; }
+      .day .dnum { min-width: 132px; font-size: 14px; color: var(--ink); }
+      .day .dwd, .day .dn-dm { display: inline; }
+      .day .dn-short { display: none; }
+      .day .plist.cell { width: 100%; font-size: 14px; }
       .day .tag { font-size: 11px; }
       .day .ints { font-size: 14px; }
       .day .res { font-size: 14px; }
       .big-today .name { font-size: 28px; }
     }
+    h1.page { margin: 4px 0 14px; }
+    .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field-row > div { flex: 1 1 220px; }
+    .check { display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer; margin: 10px 0 0; }
+    .check input { width: 20px; height: 20px; }
+    .notice { border-left: 5px solid var(--ok); background: #eaf4ee; }
+    .notice.warn { border-left-color: var(--accent); background: var(--accent-soft); }
+    .ulist details { border-top: 1px solid var(--line); }
+    .ulist details:first-child { border-top: none; }
+    .ulist summary { cursor: pointer; padding: 12px 2px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .ulist summary::-webkit-details-marker { display: none; }
+    .ulist summary::before { content: '▸'; color: var(--ink-soft); }
+    .ulist details[open] > summary::before { content: '▾'; }
+    .ulist .uname { font-weight: bold; }
+    .ulist .uuser { color: var(--ink-soft); font-size: 14px; }
+    .ulist .body { padding: 0 2px 14px 20px; }
+    .tagchip { display: inline-block; font-size: 11px; font-weight: bold; padding: 1px 8px; border-radius: 9px; background: #eef1f3; color: var(--ink-soft); border: 1px solid var(--line); }
+    .tagchip.admin { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+    .tagchip.off { background: #f6e3df; color: var(--danger); border-color: #e3b3ab; }
     .big-today .phone-big { font-size: 26px; margin-top: 6px; }
     .big-today .plist { font-size: 22px; line-height: 1.6; }
-    input[type=tel] { width: 100%; max-width: 360px; padding: 11px 10px; font-size: 17px; border: 1.5px solid var(--line); border-radius: 5px; background: #eef1f3; color: var(--ink); }
 
     .pass-card { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
     .pass-card:last-child { border-bottom: none; }
@@ -204,8 +234,18 @@
   <!-- ── App ───────────────────────────────────────────── -->
   <div id="app" class="hidden">
     <header>
-      <span class="clinic" id="app-clinic"></span>
-      <button onclick="logout()">Logga ut</button>
+      <a class="clinic" id="app-clinic" href="#/"></a>
+      <button id="logout-btn" class="hidden" onclick="logout()">Logga ut</button>
+      <div id="menu-wrap" class="hidden">
+        <button id="menu-btn" onclick="toggleMenu(event)" aria-haspopup="true" aria-expanded="false">Meny ▾</button>
+        <nav id="menu" class="hidden">
+          <a href="#/" data-route="">Kalender</a>
+          <a href="#/settings" data-route="#/settings">Inställningar</a>
+          <a href="#/admin" data-route="#/admin" id="menu-admin" class="hidden">Admin</a>
+          <hr>
+          <button onclick="logout()">Logga ut</button>
+        </nav>
+      </div>
     </header>
     <main id="view"></main>
   </div>
@@ -216,6 +256,7 @@
       : 'https://opjour-backend-110110585004.europe-north1.run.app'; // byts när domänen är vald (opjour_migrationsplan.md §12)
 
     const SV_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+    const SV_DAYS_FULL = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
     const SV_MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
     const state = {
@@ -239,7 +280,8 @@
       });
       const fresh = res.headers.get('X-Refreshed-Token');
       if (fresh) { state.token = fresh; localStorage.setItem('opjour_token', fresh); }
-      if (res.status === 401) { logout(); throw new Error('Sessionen har gått ut.'); }
+      const isLogin = path === '/auth/login' || path === '/auth/display-login';
+      if (res.status === 401 && !isLogin) { logout(); throw new Error('Sessionen har gått ut.'); }
       const text = await res.text();
       const data = text ? JSON.parse(text) : null;
       if (!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
@@ -309,9 +351,38 @@
     function enterApp() {
       showOnly('app');
       el('app-clinic').textContent = state.clinicName;
+      el('menu-wrap').classList.toggle('hidden', state.scope !== 'user');
+      el('logout-btn').classList.toggle('hidden', state.scope === 'user');
       if (state.scope === 'display') renderDisplay(el('view'));
-      else renderApp(el('view'));
+      else route();
     }
+
+    // Personlig vy: #/ (kalender), #/settings, #/admin. Visningsskärmen har ingen navigation.
+    function route() {
+      if (state.scope !== 'user') return;
+      closeMenu();
+      el('sheet-root')?.remove();
+      if (typeof _app !== 'undefined' && _app) _app.sheet = null;
+      const h = location.hash;
+      el('menu').querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.route === (h === '#/' ? '' : h)));
+      const root = el('view');
+      if (h === '#/settings') renderSettings(root);
+      else if (h === '#/admin') renderAdmin(root);
+      else renderApp(root);
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('hashchange', route);
+
+    function toggleMenu(e) {
+      e.stopPropagation();
+      const open = el('menu').classList.toggle('hidden') === false;
+      el('menu-btn').setAttribute('aria-expanded', String(open));
+    }
+    function closeMenu() { el('menu').classList.add('hidden'); el('menu-btn').setAttribute('aria-expanded', 'false'); }
+    document.addEventListener('click', e => { if (!el('menu-wrap').contains(e.target)) closeMenu(); });
+
+    // Menyvalet "Admin" syns bara för admin — anropas av varje vy när /me är hämtad.
+    function setMenuForUser(me) { el('menu-admin').classList.toggle('hidden', !me.isAdmin); }
 
     // ── Delad kalender-render ──────────────────────────────
     // opts: { interactive, isMine(claim), actingId }
@@ -347,23 +418,38 @@
       if (isToday) cls.push('today');
       if (isPast) cls.push('past');
 
-      const wd = SV_DAYS[(new Date(dISO + 'T12:00:00Z').getUTCDay() + 6) % 7];
-      let inner = `<span class="dnum"><span class="dwd">${wd} </span>${day === 1 ? SV_MONTHS[m - 1] + ' ' : ''}${day}</span>`;
+      // Desktop visar dagnummer (månad vid den 1:a); mobil visar hela veckodagen + DD/MM.
+      const wd = SV_DAYS_FULL[(new Date(dISO + 'T12:00:00Z').getUTCDay() + 6) % 7];
+      let inner = `<span class="dnum"><span class="dwd">${wd} </span>`
+        + `<span class="dn-short">${day === 1 ? SV_MONTHS[m - 1] + ' ' : ''}${day}</span>`
+        + `<span class="dn-dm">${fmtDM(dISO)}</span>`
+        + (isToday ? '<span class="today-pill">IDAG</span>' : '') + '</span>';
       const ints = (cal.interestsByDate && cal.interestsByDate[dISO]) || [];
+      const detail = isToday && opts.todayDetail;   // idag: visa telefon för den/de som är aktuella
 
       if (claim) {
         if (opts.isMine && opts.isMine(claim)) cls.push('mine');
         inner += `<span class="who">${esc(claim.displayName)}</span>`;
+        if (detail && cal.opjourToday && cal.opjourToday.phone) inner += `<span class="cphone">${phoneLink(cal.opjourToday.phone)}</span>`;
         if (claim.createdByAdmin) inner += `<span class="badge-admin">bokad av admin</span>`;
       } else if (ints.length && !isPast) {
         cls.push('has-interest');
         if (opts.actingId && ints.some(i => i.userId === opts.actingId)) cls.push('my-interest');
-        const shown = ints.slice(0, 2).map(i => esc(i.displayName)).join(', ');
-        inner += `<span class="tag">intresse · ${ints.length}</span>`
-               + `<span class="ints">${shown}${ints.length > 2 ? ` +${ints.length - 2} till` : ''}</span>`;
+        inner += `<span class="tag">intresse · ${ints.length}</span>`;
+        if (detail) {
+          inner += `<ul class="plist cell">${ints.map(i => `<li><strong>${esc(i.displayName)}</strong>${i.phone ? ' ' + phoneLink(i.phone) : ''}</li>`).join('')}</ul>`;
+        } else {
+          const shown = ints.slice(0, 2).map(i => esc(i.displayName)).join(', ');
+          inner += `<span class="ints">${shown}${ints.length > 2 ? ` +${ints.length - 2} till` : ''}</span>`;
+        }
       } else if (!isPast) {
         const res = (cal.reservesByDate && cal.reservesByDate[dISO]) || [];
-        if (res.length) inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>`;
+        if (detail && cal.reservesToday && cal.reservesToday.length) {
+          inner += `<span class="tag" style="color:var(--ink-soft)">reserv</span>`
+            + `<ul class="plist cell">${cal.reservesToday.map((r, i) => `<li>${i + 1}. <strong>${esc(r.displayName)}</strong>${r.phone ? ' ' + phoneLink(r.phone) : ''}</li>`).join('')}</ul>`;
+        } else if (res.length) {
+          inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>`;
+        }
       }
 
       if (!opts.interactive) return `<div class="${cls.join(' ')}">${inner}</div>`;
@@ -393,18 +479,29 @@
       dt.setUTCDate(dt.getUTCDate() + n);
       return dt.toISOString().slice(0, 10);
     }
+    // DD/MM (med /ÅÅÅÅ om året inte är innevarande).
+    function fmtDM(iso) {
+      const [y, m, d] = iso.split('-');
+      const thisYear = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric' }).format(new Date());
+      return `${d}/${m}` + (y !== thisYear ? `/${y}` : '');
+    }
+    // "Fredag 30/10" — hela veckodagen + DD/MM.
     function fmtDateLong(iso) {
-      const [y, m, d] = iso.split('-').map(Number);
-      const wd = SV_DAYS[(new Date(iso + 'T12:00:00Z').getUTCDay() + 6) % 7];
-      return `${wd} ${d} ${SV_MONTHS[m - 1]}`;
+      return `${SV_DAYS_FULL[(new Date(iso + 'T12:00:00Z').getUTCDay() + 6) % 7]} ${fmtDM(iso)}`;
     }
 
     // ── Boot ──────────────────────────────────────────────
-    if (state.token && (state.scope === 'user' || state.scope === 'display')) enterApp();
-    else showOnly('login');
+    // Måste vänta tills js/*.js laddats (de definierar renderApp m.fl. och körs efter detta skript);
+    // annars blir sidan tom när man laddar om medan man är inloggad.
+    document.addEventListener('DOMContentLoaded', () => {
+      if (state.token && (state.scope === 'user' || state.scope === 'display')) enterApp();
+      else showOnly('login');
+    });
   </script>
 
   <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/admin.js"></script>
   <script src="js/display.js"></script>
 </body>
 </html>
