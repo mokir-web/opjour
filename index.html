@@ -99,17 +99,18 @@
     .cal-head div { text-align: center; font-size: 13px; font-weight: bold; color: var(--ink-soft); text-transform: uppercase; padding: 5px 0; }
     .cal-week { margin-bottom: 6px; }
     .day {
-      background: var(--card); border: 1.5px solid var(--line); border-radius: 8px;
+      --cellbg: var(--card);
+      background: var(--cellbg); border: 1.5px solid var(--line); border-radius: 8px;
       min-height: 116px; padding: 9px 11px; font-size: 14.5px; text-align: left;
       display: flex; flex-direction: column; gap: 4px; width: 100%; color: var(--ink);
     }
     .day .dnum { font-size: 12.5px; color: var(--ink-soft); font-weight: bold; }
     .day.other { opacity: 0.45; }
     .day.today { border-color: var(--today); border-width: 2.5px; }
-    .day.past { background: #eef1f3; }
+    .day.past { --cellbg: #eef1f3; }
     .day .who { font-weight: bold; font-size: 15.5px; line-height: 1.2; overflow-wrap: anywhere; }
     .day .res { color: var(--ink-soft); font-style: italic; line-height: 1.2; }
-    .day.mine { background: var(--accent-soft); border-color: var(--accent); }
+    .day.mine { --cellbg: var(--accent-soft); border-color: var(--accent); }
     .day.clickable { cursor: pointer; }
     .day.clickable:hover { border-color: var(--accent); }
     .day.clickable:focus-visible { outline: 3px solid var(--interest); outline-offset: 2px; }
@@ -129,8 +130,18 @@
     .badge-admin { font-size: 10px; color: var(--accent); font-weight: bold; }
     .day .tag { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; color: var(--interest); }
     .day .ints { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
-    .day.has-interest { background: var(--interest-soft); border-color: #9bb8d6; }
+    .day.has-interest { --cellbg: var(--interest-soft); border-color: #9bb8d6; }
     .day.my-interest { border-style: dashed; border-color: var(--interest); }
+
+    /* Dator: klickbara celler har fast höjd. Får inte allt plats döljs resten och cellen märks "Visa mer" (hela dagen visas vid klick). */
+    @media (min-width: 641px) {
+      .day.clickable { height: 124px; min-height: 0; overflow: hidden; position: relative; }
+      .day.clipped::after {
+        content: 'Visa mer ▸'; position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 11px 5px;
+        background: linear-gradient(to bottom, transparent, var(--cellbg) 65%);
+        font-size: 11px; font-weight: bold; color: var(--interest); text-align: right; pointer-events: none;
+      }
+    }
 
     /* Dagsvy (bottom sheet på mobil, dialog på bredare skärmar) */
     .overlay { position: fixed; inset: 0; background: rgba(20,30,38,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
@@ -304,7 +315,7 @@
       ? 'http://localhost:8080'
       : 'https://opjour-backend-110110585004.europe-north1.run.app'; // byts när domänen är vald (opjour_migrationsplan.md §12)
 
-    const APP_VERSION = '0.4.0';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
+    const APP_VERSION = '0.5.0';   // håll lika med opjour-backend/package.json (snapshot.sh kontrollerar)
 
     const SV_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
     const SV_DAYS_FULL = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
@@ -422,7 +433,7 @@
     document.addEventListener('click', e => { if (!el('menu-wrap').contains(e.target)) closeMenu(); });
 
     // Menyvalet "Admin" syns bara för admin — anropas av varje vy när /me är hämtad.
-    function setMenuForUser(me) { el('menu-admin').classList.toggle('hidden', !me.isAdmin); el('menu-stats').classList.toggle('hidden', !me.isAdmin); }
+    function setMenuForUser(me) { el('menu-admin').classList.toggle('hidden', !me.isAdmin); el('menu-stats').classList.toggle('hidden', !me.canSeeStats); }
 
     // ── Delad kalender-render ──────────────────────────────
     // opts: { interactive, isMine(claim), actingId }
@@ -476,9 +487,9 @@
       } else if (!isPast) {
         const res = (cal.reservesByDate && cal.reservesByDate[dISO]) || [];
         if (isToday && opts.todayDetail && res.length) {
-          inner += `<span class="tag" style="color:var(--ink-soft)">reserv</span><ul class="plist cell">${res.map((r, i) => person(r, `${i + 1}. `)).join('')}</ul>`;
+          inner += `<span class="tag" style="color:var(--ink-soft)">Reserv</span><ul class="plist cell">${res.map((r, i) => person(r, `${i + 1}. `)).join('')}</ul>`;
         } else if (res.length) {
-          inner += `<span class="res">reserv: ${esc(res[0].displayName)}</span>${pp(res[0].phone)}`;
+          inner += `<span class="res">Reserv: ${esc(res[0].displayName)}</span>${pp(res[0].phone)}`;
         }
       }
 
@@ -487,7 +498,15 @@
       return `<div class="${cls.join(' ')}" role="button" tabindex="0" data-act="day" data-date="${dISO}">${inner}</div>`;
     }
 
-    // Telefonnummer visas bara för dagens aktuella person(er) — servern skickar det inte för andra.
+    // Markerar celler där innehållet inte ryms (bara dator; mobilens rader växer). Klick öppnar ändå hela dagen.
+    function markClippedCells() {
+      const wide = window.matchMedia('(min-width: 641px)').matches;
+      document.querySelectorAll('.day.clickable').forEach(c => c.classList.toggle('clipped', wide && c.scrollHeight > c.clientHeight + 1));
+    }
+    let _clipTimer = null;
+    window.addEventListener('resize', () => { clearTimeout(_clipTimer); _clipTimer = setTimeout(markClippedCells, 120); });
+
+    // Telefonnummer visas för alla inloggade, på alla poster i kalendern.
     function phoneLink(p) {
       if (!p) return '';
       return `<a class="phone" href="tel:${esc(p.replace(/[^\d+]/g, ''))}">${esc(p)}</a>`;

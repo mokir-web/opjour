@@ -1,6 +1,6 @@
-// ── Statistik (#/stats) — endast admin ───────────────────────────────────
+// ── Statistik (#/stats) — admin och användare som admin gett rätten ───────────────────────────────────
 // Klassiskt script. Beror på index.html: api(), esc(), el(), setMenuForUser(), fmtDM().
-// Hämtar GET /admin/stats?period=… och ritar med ren HTML/CSS (inga diagrambibliotek).
+// Hämtar GET /stats?period=… och ritar med ren HTML/CSS (inga diagrambibliotek).
 
 let _stats = null;
 const PERIODS = [['30', '30 dagar'], ['90', '90 dagar'], ['365', '12 månader'], ['all', 'Allt']];
@@ -10,7 +10,7 @@ async function renderStats(root) {
   try {
     const me = await api('/me');
     setMenuForUser(me);
-    if (!me.isAdmin) { location.hash = '#/'; return; }
+    if (!me.canSeeStats) { location.hash = '#/'; return; }
     _stats = { period: '90', data: null };
     await loadStats(root);
   } catch (err) {
@@ -19,7 +19,7 @@ async function renderStats(root) {
 }
 
 async function loadStats(root) {
-  _stats.data = await api('/admin/stats?period=' + _stats.period);
+  _stats.data = await api('/stats?period=' + _stats.period);
   drawStats(root);
 }
 

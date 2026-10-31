@@ -7,7 +7,7 @@
 // Idag markeras (IDAG-märke, tjock ram). Tryck på en dag öppnar dagsvyn där man bokar, anmäler intresse
 // eller tar bort sin bokning. Överst finns en on/off-toggle för reservtillgänglighet.
 // Vyn kan stegas en vecka i taget; förval: dator = 5 veckor centrerade på innevarande vecka,
-// mobil = innevarande vecka + 3 kommande. Inställningar, admin och statistik ligger på egna sidor.
+// mobil = innevarande vecka + nästa. Inställningar, admin och statistik ligger på egna sidor.
 
 let _app = null;
 
@@ -16,7 +16,7 @@ const WEEKS_BACK = 26, WEEKS_FORWARD = 52;   // samma gränser som servern
 
 function defaultView(today) {
   const monday = mondayOfISO(today);
-  return isMobileView() ? { start: monday, weeks: 4 } : { start: addDaysISO(monday, -14), weeks: 5 };
+  return isMobileView() ? { start: monday, weeks: 2 } : { start: addDaysISO(monday, -14), weeks: 5 };
 }
 
 async function fetchCalendar(view) {
@@ -31,8 +31,6 @@ async function renderApp(root) {
     setMenuForUser(me);
     _app = { cal, me, view, acting: me.userId, sheet: null };
     drawApp(root);
-    // På mobil: dagens rad ligger överst i förvalet (innevarande vecka), men scrolla till kalendern om något ligger ovanför.
-    if (isMobileView()) document.querySelector('.day.today')?.scrollIntoView({ block: 'center' });
   } catch (err) {
     root.innerHTML = `<p class="err">${esc(err.message)}</p>`;
   }
@@ -127,7 +125,7 @@ function drawApp(root) {
     <div class="card">
       <h2>Kalender</h2>
       <p class="muted" style="margin-top:-4px;font-size:13px">
-        Tryck på en dag för att boka${hasInterests() ? ' eller anmäla intresse' : ''}. Passerade dagar är låsta.
+        Tryck på en dag för att boka${hasInterests() ? ' eller anmäla intresse' : ''}. Passerade dagar går att titta på men inte ändra. Är texten i en ruta för lång visas resten när du trycker på den.
       </p>
       <div class="cal-nav">
         <button class="btn-ghost" data-nav="-1" aria-label="Föregående vecka">‹ Föregående vecka</button>
@@ -157,6 +155,7 @@ function drawApp(root) {
   root.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => stepCalendar(b.dataset.nav === 'today' ? 'today' : Number(b.dataset.nav))));
   el('res-switch').addEventListener('change', e => setReserveHome(e.target.checked));
   drawSheet();
+  markClippedCells();
 }
 
 // ── Reservtoggle ───────────────────────────────────────────────────────────
@@ -212,7 +211,7 @@ function drawSheet() {
 
   let actions = '';
   if (isPast) {
-    actions = '<p class="hint">Passerade dagar är låsta.</p>';
+    actions = '<p class="hint">Passerade dagar går inte att ändra.</p>';
   } else if (!claim) {
     actions += `<button class="btn btn-block" data-sheet="book">${isSelf ? 'Ta opjour' : 'Boka åt ' + esc(acting.displayName)}</button>`;
     if (hasInterests()) {

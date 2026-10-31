@@ -33,7 +33,7 @@ async function drawDisplay(root) {
     banner = `<div class="label">Ingen uppskriven — intresserade</div>
       <ul class="plist">${ints.map(i => `<li>${personLine(i.displayName, i.phone)}</li>`).join('')}</ul>`;
   } else if (cal.reservesToday.length) {
-    banner = `<div class="label">Ingen uppskriven — reserv</div>
+    banner = `<div class="label">Ingen uppskriven — Reserv</div>
       <ul class="plist">${cal.reservesToday.map((r, i) => `<li>${personLine(r.displayName, r.phone, `${i + 1}. `)}</li>`).join('')}</ul>`;
   } else {
     banner = `<div class="label">Dagens opjour</div><div class="name" style="font-size:24px;color:var(--ink-soft)">Ingen uppskriven</div>`;

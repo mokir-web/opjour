@@ -8,9 +8,9 @@ Vanilla JS-SPA, ingen byggkedja. Tänkt för GitHub Pages + eget domännamn (TBD
   tvingat PIN-byte, och den delade kalender-renderaren `buildCalendar()`.
 - `js/import.js` — CSV/Excel-tolkning för användarimport (inga beroenden; fungerar även i Node för tester).
 - `js/settings.js` / `js/admin.js` — inställningar (namn, användarnamn, telefon, PIN) och admin (roller, import, redigera/radera användare).
-- `js/stats.js` — statistikpanel för admin (`#/stats`), ritad med ren HTML/CSS.
+- `js/stats.js` — statistikpanel (`#/stats`, admin eller användare med statistikrätt), ritad med ren HTML/CSS.
 - `js/app.js` — personlig vy (`renderApp`). En sida: dagens opjour, reservtoggel (av/på),
-  kalender med boka/avboka (dator: 5 veckor, mobil: innevarande vecka + 3, stega en vecka åt gången), "mina kommande pass". Admin får en "boka åt"-väljare.
+  kalender med boka/avboka (dator: 5 veckor, mobil: innevarande vecka + nästa, stega en vecka åt gången), "mina kommande pass". Admin får en "boka åt"-väljare.
 - `js/display.js` — visningsvy (`renderDisplay`). Read-only, stor "Dagens opjour: X" /
   reserver + kalendern. Auto-uppdatering var 60:e sekund.
 

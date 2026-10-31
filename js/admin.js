@@ -25,7 +25,8 @@ async function renderAdmin(root) {
     const me = await api('/me');
     setMenuForUser(me);
     if (!me.isAdmin) { location.hash = '#/'; return; }
-    _admin = { me, open: new Set(), notice: null, pin: randomPin(), userTouched: false, plan: null };
+    _admin = { me, open: new Set(), notice: null, pin: randomPin(), userTouched: false, plan: null, clinics: null, clinicUserTouched: false };
+    if (me.isGlobalAdmin) _admin.clinics = (await api('/admin/clinics')).clinics;
     drawAdmin(root);
   } catch (err) {
     root.innerHTML = `<p class="err">${esc(err.message)}</p>`;
@@ -40,7 +41,9 @@ async function reloadAdmin() {
 function adminChips(u) {
   return [
     u.isDisplay ? '<span class="tagchip admin">Visning</span>' : '',
-    u.isAdmin ? '<span class="tagchip admin">Admin</span>' : '',
+    u.isGlobalAdmin ? '<span class="tagchip admin">Global admin</span>' : '',
+    u.isAdmin && !u.isGlobalAdmin ? '<span class="tagchip admin">Admin</span>' : '',
+    !u.isDisplay && !u.isAdmin && u.canSeeStats ? '<span class="tagchip">Statistik</span>' : '',
     !u.active ? '<span class="tagchip off">Inaktiv</span>' : '',
     u.active && u.availableReserve && !u.isDisplay ? '<span class="tagchip">Reserv</span>' : ''
   ].join(' ');
@@ -52,6 +55,7 @@ function sw(attrs, checked, disabled) {
 
 function userBlock(u, selfId) {
   const isSelf = u.id === selfId;
+  const locked = u.isGlobalAdmin && !_admin.me.isGlobalAdmin;   // bara en global admin får röra ett globalt adminkonto
   const bookings = u.claimCount ? ` · ${u.claimCount} bokning${u.claimCount === 1 ? '' : 'ar'}` : '';
   return `
     <details data-id="${esc(u.id)}"${_admin.open.has(u.id) ? ' open' : ''}>
@@ -68,12 +72,14 @@ function userBlock(u, selfId) {
         <div class="row" style="margin-top:10px"><button class="btn" data-a="save">Spara</button></div>
         ${u.isDisplay ? '<p class="hint">Visningskonto: loggar in som alla andra men ser bara kalendern (ingen bokning, ingen reserv).</p>' : `
         <div class="opt-row" style="margin-top:12px"><span>Tillgänglig som reserv</span>${sw('data-a="reserve"', u.availableReserve)}</div>
-        <div class="opt-row"><span>Admin</span>${sw('data-a="admin"', u.isAdmin, isSelf)}</div>`}
-        <div class="opt-row"><span>Aktiv <span class="muted">(kan logga in)</span></span>${sw('data-a="active"', u.active, isSelf)}</div>
+        <div class="opt-row"><span>Admin</span>${sw('data-a="admin"', u.isAdmin, isSelf || u.isGlobalAdmin || locked)}</div>
+        <div class="opt-row"><span>Får se statistiken${u.isAdmin ? ' <span class="muted">(admin ser alltid)</span>' : ''}</span>${sw('data-a="stats"', u.isAdmin || u.canSeeStats, u.isAdmin || locked)}</div>`}
+        <div class="opt-row"><span>Aktiv <span class="muted">(kan logga in)</span></span>${sw('data-a="active"', u.active, isSelf || u.isGlobalAdmin || locked)}</div>
         ${isSelf ? '<p class="hint">Du kan inte inaktivera, ta bort eller degradera dig själv.</p>' : ''}
+        ${locked ? '<p class="hint">Globalt adminkonto — kan bara ändras av en global admin.</p>' : ''}
         <div class="row" style="margin-top:12px;gap:8px">
-          <button class="btn-ghost" data-a="resetpin">Återställ PIN…</button>
-          ${isSelf ? '' : '<button class="btn-ghost" style="color:var(--danger);border-color:#e3b3ab" data-a="delete">Radera användare…</button>'}
+          ${locked ? '' : '<button class="btn-ghost" data-a="resetpin">Återställ PIN…</button>'}
+          ${isSelf || u.isGlobalAdmin ? '' : '<button class="btn-ghost" style="color:var(--danger);border-color:#e3b3ab" data-a="delete">Radera användare…</button>'}
         </div>
         <div class="status" data-s></div>
       </div>
@@ -99,6 +105,8 @@ function drawAdmin(root) {
         <button class="link-btn" style="color:var(--ink-soft)" onclick="_admin.notice=null;_admin.created=null;drawAdmin(el('view'))">Stäng</button>
       </div>
     </div>` : ''}
+
+    ${_admin.clinics ? clinicCard() : ''}
 
     <div class="card">
       <h2>Lägg till användare</h2>
@@ -317,7 +325,63 @@ function onUserChange(e) {
   if (a === 'active' && !on && !confirm(`Inaktivera ${u.displayName}? Kontot kan inte längre logga in. Befintliga bokningar ligger kvar i kalendern.`)) { box.checked = true; return; }
   userAction(d, id => {
     if (a === 'reserve') return api('/reserve', { method: 'PUT', body: { available: on, userId: id } });
+    if (a === 'stats') return api('/admin/users/' + encodeURIComponent(id), { method: 'PATCH', body: { canSeeStats: on } });
     if (a === 'admin') return api('/admin/users/' + encodeURIComponent(id), { method: 'PATCH', body: { isAdmin: on } });
     return api('/admin/users/' + encodeURIComponent(id), { method: 'PATCH', body: { active: on } });
   }, 'Sparat.');
+}
+
+// ── Kliniker (endast global admin) ────────────────────────────────────────
+function clinicCard() {
+  const rows = _admin.clinics.map(c =>
+    `<div class="pass-card"><span><strong>${esc(c.name)}</strong> <span class="muted">· ${c.userCount} användare · ${c.adminCount} admin</span></span></div>`).join('');
+  return `<div class="card">
+      <h2>Kliniker</h2>
+      <p class="hint" style="margin-top:0">Du är global admin och kan lägga upp nya kliniker. Varje klinik får en egen admin, som sedan lägger till klinikens övriga användare.</p>
+      ${rows}
+      <details style="margin-top:12px"${_admin.clinicOpen ? ' open' : ''} ontoggle="_admin.clinicOpen=this.open">
+        <summary style="cursor:pointer;font-weight:bold">Ny klinik</summary>
+        <form id="nc-form" onsubmit="return addClinic(event)" style="margin-top:8px">
+          <label for="nc-name" style="margin-top:0">Klinikens namn</label>
+          <input type="text" id="nc-name" maxlength="80" required>
+          <div class="field-row">
+            <div><label for="nc-aname">Adminens fullständiga namn</label>
+              <input type="text" id="nc-aname" maxlength="60" required oninput="onNcName(this.value)"></div>
+            <div><label for="nc-auser">Adminens användarnamn</label>
+              <input type="text" id="nc-auser" autocapitalize="none" spellcheck="false" required oninput="_admin.clinicUserTouched=true"></div>
+          </div>
+          <div class="field-row">
+            <div><label for="nc-aphone">Adminens telefon (valfritt)</label>
+              <input type="tel" id="nc-aphone" maxlength="30" inputmode="tel" placeholder="070-123 45 67"></div>
+          </div>
+          <p class="hint">En tillfällig PIN slumpas och visas en gång när kliniken är skapad.</p>
+          <div class="row" style="margin-top:8px"><button type="submit" class="btn">Skapa klinik</button></div>
+          <div id="nc-status" class="status err"></div>
+        </form>
+      </details>
+    </div>`;
+}
+
+function onNcName(v) {
+  if (!_admin.clinicUserTouched) el('nc-auser').value = suggestUsername(v);
+}
+
+async function addClinic(e) {
+  e.preventDefault();
+  const st = el('nc-status'); st.textContent = '';
+  try {
+    const r = await api('/admin/clinics', { method: 'POST', body: {
+      name: el('nc-name').value.trim(), adminName: el('nc-aname').value.trim(),
+      adminUsername: el('nc-auser').value.trim(), adminPhone: el('nc-aphone').value
+    } });
+    _admin.notice = { tone: 'ok', html:
+      `Kliniken <strong>${esc(r.clinic.name)}</strong> är skapad.<br>`
+      + `Admin: <strong>${esc(r.admin.displayName)}</strong> · användarnamn <strong>${esc(r.admin.username)}</strong> · PIN <strong>${esc(r.admin.pin)}</strong><br>`
+      + `<span class="muted">Visas bara nu. Adminen väljer en egen PIN vid första inloggningen och lägger sedan till klinikens användare.</span>` };
+    _admin.clinicOpen = false; _admin.clinicUserTouched = false;
+    _admin.clinics = (await api('/admin/clinics')).clinics;
+    drawAdmin(el('view'));
+    window.scrollTo(0, 0);
+  } catch (err) { st.textContent = err.message; }
+  return false;
 }
